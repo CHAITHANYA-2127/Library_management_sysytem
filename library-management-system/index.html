@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAGETURN — Modern Library Management System</title>
+  <meta name="description" content="A professional, calm workspace to manage library books, student members, and circulation records.">
+  
+  <!-- Google Fonts: Fraunces (Serif Editorial) & Plus Jakarta Sans (Clean Modern UI) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Primary Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231b4332' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z'/%3E%3Cpath d='M6 6h10'/%3E%3Cpath d='M6 10h10'/%3E%3C/svg%3E">
+</head>
+<body>
+
+  <!-- ========================================================================= -->
+  <!-- 1. AUTHENTICATION VIEW (Matching Image 1: Split-screen Admin Sign In)    -->
+  <!-- ========================================================================= -->
+  <div id="authView" class="auth-wrapper">
+    <div class="auth-container">
+      
+      <!-- Left Hero Banner -->
+      <div class="auth-hero">
+        <div class="auth-hero-header">
+          <div class="brand-logo light">
+            <svg class="brand-icon" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 6v16a2 2 0 0 0 2 2h18V4H6a2 2 0 0 0-2 2z"></path>
+              <line x1="10" y1="9" x2="10" y2="17"></line>
+              <line x1="14" y1="7" x2="14" y2="17"></line>
+              <line x1="18" y1="10" x2="18" y2="17"></line>
+            </svg>
+            <span class="brand-text">PAGETURN</span>
+          </div>
+        </div>
+
+        <div class="auth-hero-body">
+          <span class="hero-tag">LIBRARY ADMINISTRATION</span>
+          <h1 class="hero-title">
+            Every book has a story.<br>
+            <em>Keep yours organized.</em>
+          </h1>
+          <p class="hero-subtitle">
+            A calm, simple workspace to manage your library, students and circulation in one place.
+          </p>
+        </div>
+
+        <div class="auth-hero-footer">
+          <p class="hero-footnote">A smarter way to run your campus library</p>
+        </div>
+      </div>
+
+      <!-- Right Login Form -->
+      <div class="auth-form-card">
+        <div class="auth-form-inner">
+          <span class="auth-eyebrow">WELCOME BACK</span>
+          <h2 class="auth-heading">Admin sign in</h2>
+          <p class="auth-subheading">Sign in to open your library workspace.</p>
+
+          <form id="loginForm" class="login-form" novalidate>
+            <div class="form-group">
+              <label for="loginUsername">Username</label>
+              <input type="text" id="loginUsername" name="username" class="form-control" placeholder="admin" value="admin" autocomplete="username" required>
+            </div>
+
+            <div class="form-group">
+              <label for="loginPassword">Password</label>
+              <div class="password-input-wrap">
+                <input type="password" id="loginPassword" name="password" class="form-control" placeholder="Enter password" value="Library@123" autocomplete="current-password" required>
+                <button type="button" class="btn-toggle-pwd" id="togglePasswordBtn" title="Toggle password visibility">
+                  <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-signin">
+              <span>Sign in</span>
+              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          </form>
+
+          <!-- Demo Access Quick Box -->
+          <div class="demo-access-box" id="demoAccessBox" title="Click to fill credentials">
+            <div class="demo-access-head">
+              <span class="demo-tag">Demo access</span>
+              <button type="button" class="btn-link-action" id="autoFillDemoBtn">Auto-fill</button>
+            </div>
+            <div class="demo-credentials">
+              <div><span class="cred-label">Username:</span> <code>admin</code></div>
+              <div><span class="cred-label">Password:</span> <code>Library@123</code></div>
+            </div>
+          </div>
+
+          <div class="auth-bottom-note">
+            <span>Library Management System • Student project demo</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- 2. MAIN APPLICATION WORKSPACE                                             -->
+  <!-- ========================================================================= -->
+  <div id="appWorkspace" class="app-workspace d-none">
+    
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
+    <!-- --------------------------------------------------------------------- -->
+    <!-- SIDEBAR NAVIGATION (Matching Image 2 Sidebar)                         -->
+    <!-- --------------------------------------------------------------------- -->
+    <aside class="sidebar" id="appSidebar">
+      
+      <!-- Brand Logo in Sidebar -->
+      <div class="sidebar-brand">
+        <div class="brand-logo light">
+          <svg class="brand-icon" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 6v16a2 2 0 0 0 2 2h18V4H6a2 2 0 0 0-2 2z"></path>
+            <line x1="10" y1="9" x2="10" y2="17"></line>
+            <line x1="14" y1="7" x2="14" y2="17"></line>
+            <line x1="18" y1="10" x2="18" y2="17"></line>
+          </svg>
+          <span class="brand-text">PAGETURN</span>
+        </div>
+        <button class="btn-sidebar-close mobile-only" id="sidebarCloseBtn" aria-label="Close navigation">
+          ✕
+        </button>
+      </div>
+
+      <!-- Navigation Section -->
+      <div class="sidebar-nav-container">
+        <div class="sidebar-section-label">WORKSPACE</div>
+        <nav class="sidebar-nav" aria-label="Primary navigation">
+          
+          <!-- 1. Dashboard -->
+          <button class="nav-item active" data-view="dashboard" id="nav-dashboard">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+              <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+            </svg>
+            <span class="nav-label">Dashboard</span>
+          </button>
+
+          <!-- 2. Manage Books -->
+          <button class="nav-item" data-view="books" id="nav-books">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+            <span class="nav-label">Manage Books</span>
+          </button>
+
+          <!-- 3. Manage Students -->
+          <button class="nav-item" data-view="students" id="nav-students">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            <span class="nav-label">Manage Students</span>
+          </button>
+
+          <!-- 4. Issue Books -->
+          <button class="nav-item" data-view="issue" id="nav-issue">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span class="nav-label">Issue Books</span>
+          </button>
+
+          <!-- 5. Return Books -->
+          <button class="nav-item" data-view="return" id="nav-return">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            <span class="nav-label">Return Books</span>
+            <span class="nav-badge" id="sidebarReturnBadge">2</span>
+          </button>
+
+          <!-- 6. Issue History -->
+          <button class="nav-item" data-view="history" id="nav-history">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span class="nav-label">Issue History</span>
+          </button>
+
+        </nav>
+      </div>
+
+      <!-- Sidebar Footer (Admin User Info + Sign Out) -->
+      <div class="sidebar-footer">
+        <div class="admin-profile">
+          <div class="admin-avatar">A</div>
+          <div class="admin-info">
+            <div class="admin-name">Library Admin</div>
+            <div class="admin-role">Administrator</div>
+          </div>
+        </div>
+        <button class="btn-signout" id="signOutBtn" title="Sign out of workspace">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          <span>Sign out</span>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- --------------------------------------------------------------------- -->
+    <!-- MAIN APPLICATION CONTENT AREA                                         -->
+    <!-- --------------------------------------------------------------------- -->
+    <div class="app-main">
+      
+      <!-- TOP NAVIGATION BAR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="btn-toggle-sidebar" id="sidebarToggleBtn" aria-label="Toggle navigation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          
+          <nav class="breadcrumb" aria-label="Breadcrumb">
+            <span class="breadcrumb-root">Library</span>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current" id="breadcrumbSection">Dashboard</span>
+          </nav>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Live Date with Indicator Dot -->
+          <div class="topbar-date">
+            <span class="status-dot-pulse"></span>
+            <span id="currentDateDisplay">Sun, 1 Nov, 2026</span>
+          </div>
+
+          <!-- Quick Refresh Button -->
+          <button class="btn btn-outline btn-sm btn-icon-text" id="refreshDataBtn" title="Reload live data and statistics">
+            <svg class="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            <span class="btn-text">Refresh data</span>
+          </button>
+
+          <!-- Reset / Demo Data Utilities -->
+          <div class="dropdown-wrap">
+            <button class="btn btn-icon btn-outline" id="dbSettingsBtn" title="Database actions">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="1"></circle>
+                <circle cx="12" cy="5" r="1"></circle>
+                <circle cx="12" cy="19" r="1"></circle>
+              </svg>
+            </button>
+            <div class="dropdown-menu dropdown-right" id="dbSettingsMenu">
+              <button class="dropdown-item" id="btnExportData">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Export Database (JSON)
+              </button>
+              <button class="dropdown-item text-danger" id="btnResetDemoData">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                Restore Demo Sample Data
+              </button>
+            </div>
+          </div>
+
+          <!-- Admin Avatar Pill -->
+          <div class="topbar-user" title="Signed in as Library Admin">
+            <div class="user-pill-avatar">A</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- CONTENT SECTIONS WRAPPER -->
+      <main class="content-container">
+
+        <!-- ================================================================= -->
+        <!-- SECTION 1: DASHBOARD                                              -->
+        <!-- ================================================================= -->
+        <section id="section-dashboard" class="content-section active">
+          
+          <!-- Dashboard Greeting Header -->
+          <div class="section-hero">
+            <div class="section-eyebrow">LIBRARY OVERVIEW</div>
+            <h1 class="section-title">Good day, Admin <span class="sparkle">✦</span></h1>
+            <p class="section-subtitle">Here's what's happening in your library today.</p>
+          </div>
+
+          <!-- 4 Statistic Cards (Requirement 2) -->
+          <div class="stats-grid">
+            
+            <!-- Card 1: Total Books -->
+            <div class="stat-card" data-action="goToBooks">
+              <div class="stat-card-header">
+                <span class="stat-label">Total Books</span>
+                <div class="stat-icon-wrap icon-green">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                  </svg>
+                </div>
+              </div>
+              <div class="stat-value" id="statTotalBooks">0</div>
+              <div class="stat-meta">
+                <span id="statTotalTitles">0</span> book records
+              </div>
+            </div>
+
+            <!-- Card 2: Available Books -->
+            <div class="stat-card" data-action="goToBooks">
+              <div class="stat-card-header">
+                <span class="stat-label">Available Books</span>
+                <div class="stat-icon-wrap icon-sage">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" y1="20" x2="4" y2="4"></line>
+                    <line x1="8" y1="20" x2="8" y2="4"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <path d="M16 20l4-16"></path>
+                  </svg>
+                </div>
+              </div>
+              <div class="stat-value" id="statAvailableBooks">0</div>
+              <div class="stat-meta">
+                Ready to borrow
+              </div>
+            </div>
+
+            <!-- Card 3: Issued Books -->
+            <div class="stat-card" data-action="goToReturn">
+              <div class="stat-card-header">
+                <span class="stat-label">Issued Books</span>
+                <div class="stat-icon-wrap icon-amber">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="16" height="14" rx="2"></rect>
+                    <path d="M6 3h14a2 2 0 0 1 2 2v14"></path>
+                  </svg>
+                </div>
+              </div>
+              <div class="stat-value" id="statIssuedBooks">0</div>
+              <div class="stat-meta">
+                <span id="statOverdueWarning">0 overdue</span> • Awaiting return
+              </div>
+            </div>
+
+            <!-- Card 4: Registered Students -->
+            <div class="stat-card" data-action="goToStudents">
+              <div class="stat-card-header">
+                <span class="stat-label">Registered Students</span>
+                <div class="stat-icon-wrap icon-teal">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                    <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                  </svg>
+                </div>
+              </div>
+              <div class="stat-value" id="statRegisteredStudents">0</div>
+              <div class="stat-meta">
+                Active records
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Main Dashboard Split (Recent Activities & Issues vs Quick Actions & Stats) -->
+          <div class="dashboard-grid">
+            
+            <!-- Left Column: Recent Activity & Recent Book Issues -->
+            <div class="dashboard-col">
+              
+              <!-- Recent Activities Card -->
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <h3 class="card-title">Recent activity</h3>
+                    <p class="card-subtitle">Latest circulation and catalog records</p>
+                  </div>
+                  <button class="btn-link" id="btnViewAllHistory">View all →</button>
+                </div>
+                <div class="card-body p-0">
+                  <div class="activity-list" id="dashboardActivityList">
+                    <!-- Injected dynamically by JS -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Recent Book Issues Table -->
+              <div class="card mt-4">
+                <div class="card-header">
+                  <div>
+                    <h3 class="card-title">Recent Book Issues</h3>
+                    <p class="card-subtitle">Active checkouts needing monitoring</p>
+                  </div>
+                  <button class="btn-link" id="btnGoToIssueModule">Issue a book →</button>
+                </div>
+                <div class="card-body p-0">
+                  <div class="table-responsive">
+                    <table class="table">
+                      <thead>
+                        <tr>
+                          <th>Book</th>
+                          <th>Student</th>
+                          <th>Due Date</th>
+                          <th>Status</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody id="dashboardRecentIssuesTable">
+                        <!-- Injected dynamically by JS -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right Column: Quick Action Buttons & Library Statistics -->
+            <div class="dashboard-col">
+              
+              <!-- Quick Actions Card (Requirement 2) -->
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <h3 class="card-title">Quick actions</h3>
+                    <p class="card-subtitle">Common library tasks</p>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="quick-action-list">
+                    
+                    <!-- Quick Action 1: Add a new book -->
+                    <button class="quick-action-btn" id="qaAddBook">
+                      <div class="qa-icon-wrap icon-green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <line x1="12" y1="5" x2="12" y2="19"></line>
+                          <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                      </div>
+                      <div class="qa-text">
+                        <span class="qa-title">Add a new book</span>
+                        <span class="qa-desc">Expand your library catalog</span>
+                      </div>
+                      <span class="qa-arrow">→</span>
+                    </button>
+
+                    <!-- Quick Action 2: Register a student -->
+                    <button class="quick-action-btn" id="qaRegisterStudent">
+                      <div class="qa-icon-wrap icon-teal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                          <circle cx="8.5" cy="7" r="4"></circle>
+                          <line x1="20" y1="8" x2="20" y2="14"></line>
+                          <line x1="23" y1="11" x2="17" y2="11"></line>
+                        </svg>
+                      </div>
+                      <div class="qa-text">
+                        <span class="qa-title">Register a student</span>
+                        <span class="qa-desc">Add a new library member</span>
+                      </div>
+                      <span class="qa-arrow">→</span>
+                    </button>
+
+                    <!-- Quick Action 3: Issue a book -->
+                    <button class="quick-action-btn" id="qaIssueBook">
+                      <div class="qa-icon-wrap icon-amber">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="2" y="7" width="16" height="14" rx="2"></rect>
+                          <path d="M6 3h14a2 2 0 0 1 2 2v14"></path>
+                        </svg>
+                      </div>
+                      <div class="qa-text">
+                        <span class="qa-title">Issue a book</span>
+                        <span class="qa-desc">Check out title to student</span>
+                      </div>
+                      <span class="qa-arrow">→</span>
+                    </button>
+
+                    <!-- Quick Action 4: Return a book -->
+                    <button class="quick-action-btn" id="qaReturnBook">
+                      <div class="qa-icon-wrap icon-sage">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="1 4 1 10 7 10"></polyline>
+                          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                        </svg>
+                      </div>
+                      <div class="qa-text">
+                        <span class="qa-title">Return a book</span>
+                        <span class="qa-desc">Process return & update stock</span>
+                      </div>
+                      <span class="qa-arrow">→</span>
+                    </button>
+
+                  </div>
+                </div>
+              </div>
+
+              <!-- Library Statistics Breakdown Card (Requirement 2) -->
+              <div class="card mt-4">
+                <div class="card-header">
+                  <div>
+                    <h3 class="card-title">Library statistics</h3>
+                    <p class="card-subtitle">Collection & circulation overview</p>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <!-- Circulation Rate Bar -->
+                  <div class="progress-item">
+                    <div class="progress-labels">
+                      <span class="progress-title">Circulation Utilization</span>
+                      <span class="progress-value" id="statsCirculationPercent">0%</span>
+                    </div>
+                    <div class="progress-track">
+                      <div class="progress-fill" id="statsCirculationBar" style="width: 0%;"></div>
+                    </div>
+                  </div>
+
+                  <!-- Book Categories Breakdown -->
+                  <div class="category-breakdown mt-4">
+                    <h4 class="subhead-small">Top Categories in Catalog</h4>
+                    <div id="statsCategoryList" class="category-chip-list">
+                      <!-- Rendered by JS -->
+                    </div>
+                  </div>
+
+                  <!-- Quick Health / Stock Status -->
+                  <div class="circulation-summary mt-4">
+                    <div class="summary-pill">
+                      <span class="pill-dot green"></span>
+                      <span class="pill-label">In Stock:</span>
+                      <strong id="statsInStockTitles">0 titles</strong>
+                    </div>
+                    <div class="summary-pill">
+                      <span class="pill-dot amber"></span>
+                      <span class="pill-label">Low / Out:</span>
+                      <strong id="statsOutOfStockTitles">0 titles</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- SECTION 2: MANAGE BOOKS (Matching Image 3)                        -->
+        <!-- ================================================================= -->
+        <section id="section-books" class="content-section">
+          
+          <div class="section-hero-split">
+            <div class="section-hero-text">
+              <h1 class="section-title">Book catalog</h1>
+              <p class="section-subtitle">Add, update and keep track of every title.</p>
+            </div>
+            <div class="section-badge-wrap">
+              <span class="counter-badge" id="booksTotalBadge">0 titles</span>
+            </div>
+          </div>
+
+          <div class="two-column-layout">
+            
+            <!-- Left: Add Book Form (Requirement 4) -->
+            <div class="form-column">
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <h3 class="card-title">Add a book</h3>
+                    <p class="card-subtitle">Enter the book's details below.</p>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <form id="addBookForm" class="crud-form" novalidate>
+                    
+                    <!-- Book ID -->
+                    <div class="form-group">
+                      <label for="bookIdInput">Book ID <span class="required">*</span></label>
+                      <input type="text" id="bookIdInput" class="form-control" placeholder="e.g. BK-101" required>
+                      <span class="form-hint">Must be unique (e.g. BK-105, ISBN).</span>
+                    </div>
+
+                    <!-- Book Title -->
+                    <div class="form-group">
+                      <label for="bookTitleInput">Book title <span class="required">*</span></label>
+                      <input type="text" id="bookTitleInput" class="form-control" placeholder="e.g. The Alchemist" required>
+                    </div>
+
+                    <!-- Author -->
+                    <div class="form-group">
+                      <label for="bookAuthorInput">Author <span class="required">*</span></label>
+                      <input type="text" id="bookAuthorInput" class="form-control" placeholder="Author name" required>
+                    </div>
+
+                    <!-- Category -->
+                    <div class="form-group">
+                      <label for="bookCategoryInput">Category <span class="required">*</span></label>
+                      <input type="text" id="bookCategoryInput" class="form-control" placeholder="e.g. Programming, Fiction, Science" list="commonCategoriesList" required>
+                      <datalist id="commonCategoriesList">
+                        <option value="Programming">
+                        <option value="Fiction">
+                        <option value="Non-Fiction">
+                        <option value="Science">
+                        <option value="History">
+                        <option value="Art">
+                        <option value="Moral Values">
+                        <option value="Philosophy">
+                        <option value="Mathematics">
+                      </datalist>
+                    </div>
+
+                    <!-- Total Quantity -->
+                    <div class="form-group">
+                      <label for="bookQuantityInput">Total quantity <span class="required">*</span></label>
+                      <input type="number" id="bookQuantityInput" class="form-control" min="1" step="1" value="1" required>
+                      <span class="form-hint">Cannot be negative or zero. Available copies will match this on creation.</span>
+                    </div>
+
+                    <div class="form-actions">
+                      <button type="submit" class="btn btn-primary btn-block">Add book</button>
+                    </div>
+
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: All Books Table with Search & Filter -->
+            <div class="table-column">
+              <div class="card">
+                <div class="card-header card-header-filter">
+                  <div>
+                    <h3 class="card-title">All books</h3>
+                    <p class="card-subtitle" id="booksAvailableSubtitle">0 copies available</p>
+                  </div>
+                  
+                  <!-- Search and Category Filter Toolbar -->
+                  <div class="filter-toolbar">
+                    <div class="search-input-wrap">
+                      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                      </svg>
+                      <input type="text" id="searchBooksInput" class="form-control form-control-sm" placeholder="Search...">
+                    </div>
+
+                    <select id="filterBookCategory" class="form-control form-control-sm form-select">
+                      <option value="all">All Categories</option>
+                      <!-- Populated dynamically -->
+                    </select>
+                  </div>
+                </div>
+
+                <div class="card-body p-0">
+                  <div class="table-responsive">
+                    <table class="table" id="booksTable">
+                      <thead>
+                        <tr>
+                          <th>TITLE</th>
+                          <th>BOOK ID</th>
+                          <th>CATEGORY</th>
+                          <th>STOCK</th>
+                          <th class="text-right">ACTIONS</th>
+                        </tr>
+                      </thead>
+                      <tbody id="booksTableBody">
+                        <!-- Injected dynamically by JS -->
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <!-- Empty state when no books found -->
+                  <div id="booksEmptyState" class="empty-state d-none">
+                    <div class="empty-icon">📚</div>
+                    <h4>No books found</h4>
+                    <p>Try adjusting your search query or add a new book to your catalog.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- SECTION 3: MANAGE STUDENTS (Matching Image 4)                     -->
+        <!-- ================================================================= -->
+        <section id="section-students" class="content-section">
+          
+          <div class="section-hero-split">
+            <div class="section-hero-text">
+              <h1 class="section-title">Students</h1>
+              <p class="section-subtitle">Manage student registrations and library members.</p>
+            </div>
+            <div class="section-badge-wrap">
+              <span class="counter-badge" id="studentsTotalBadge">0 members</span>
+            </div>
+          </div>
+
+          <div class="two-column-layout">
+            
+            <!-- Left: Register Student Form (Requirement 5) -->
+            <div class="form-column">
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <h3 class="card-title">Register a student</h3>
+                    <p class="card-subtitle">Student information</p>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <form id="registerStudentForm" class="crud-form" novalidate>
+                    
+                    <!-- Full Name -->
+                    <div class="form-group">
+                      <label for="studentNameInput">Full name <span class="required">*</span></label>
+                      <input type="text" id="studentNameInput" class="form-control" placeholder="Student name" required>
+                    </div>
+
+                    <!-- Roll Number -->
+                    <div class="form-group">
+                      <label for="studentRollInput">Roll number <span class="required">*</span></label>
+                      <input type="text" id="studentRollInput" class="form-control" placeholder="e.g. 23CSE101" required>
+                      <span class="form-hint">Must be unique for each student.</span>
+                    </div>
+
+                    <!-- Department -->
+                    <div class="form-group">
+                      <label for="studentDeptInput">Department <span class="required">*</span></label>
+                      <input type="text" id="studentDeptInput" class="form-control" placeholder="e.g. CSE, ECE, Mechanical" list="departmentSuggestions" required>
+                      <datalist id="departmentSuggestions">
+                        <option value="CSE">
+                        <option value="ECE">
+                        <option value="EEE">
+                        <option value="Civil">
+                        <option value="Mechanical">
+                        <option value="Data Science">
+                        <option value="Information Technology">
+                        <option value="Business Administration">
+                      </datalist>
+                    </div>
+
+                    <!-- Email Address -->
+                    <div class="form-group">
+                      <label for="studentEmailInput">Email address <span class="required">*</span></label>
+                      <input type="email" id="studentEmailInput" class="form-control" placeholder="student@example.com" required>
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div class="form-group">
+                      <label for="studentPhoneInput">Phone number <span class="required">*</span></label>
+                      <input type="tel" id="studentPhoneInput" class="form-control" placeholder="+1 555-0123" required>
+                    </div>
+
+                    <div class="form-actions">
+                      <button type="submit" class="btn btn-primary btn-block">Register student</button>
+                    </div>
+
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Registered Students Table with Search -->
+            <div class="table-column">
+              <div class="card">
+                <div class="card-header card-header-filter">
+                  <div>
+                    <h3 class="card-title">Registered students</h3>
+                    <p class="card-subtitle">Search by name, roll or department</p>
+                  </div>
+                  
+                  <!-- Search Toolbar -->
+                  <div class="filter-toolbar">
+                    <div class="search-input-wrap">
+                      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                      </svg>
+                      <input type="text" id="searchStudentsInput" class="form-control form-control-sm" placeholder="Search...">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-body p-0">
+                  <div class="table-responsive">
+                    <table class="table" id="studentsTable">
+                      <thead>
+                        <tr>
+                          <th>STUDENT</th>
+                          <th>ROLL NUMBER</th>
+                          <th>DEPARTMENT</th>
+                          <th>PHONE</th>
+                          <th class="text-right">ACTIONS</th>
+                        </tr>
+                      </thead>
+                      <tbody id="studentsTableBody">
+                        <!-- Injected dynamically by JS -->
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <!-- Empty state when no students found -->
+                  <div id="studentsEmptyState" class="empty-state d-none">
+                    <div class="empty-icon">👥</div>
+                    <h4>No students found</h4>
+                    <p>Try searching with another query or register a new student member.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- SECTION 4: ISSUE BOOKS (Matching Image 5)                         -->
+        <!-- ================================================================= -->
+        <section id="section-issue" class="content-section">
+          
+          <div class="section-hero">
+            <div class="section-eyebrow">CIRCULATION DESK</div>
+            <h1 class="section-title">Issue a book</h1>
+            <p class="section-subtitle">Check out a title to a registered student.</p>
+          </div>
+
+          <div class="circulation-grid">
+            
+            <!-- Left: Checkout Form (Requirement 6) -->
+            <div class="circulation-form-wrap">
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <h3 class="card-title">New checkout</h3>
+                    <p class="card-subtitle">Choose a student and an available title.</p>
+                  </div>
+                  <div class="card-icon-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="7" width="16" height="14" rx="2"></rect>
+                      <path d="M6 3h14a2 2 0 0 1 2 2v14"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <form id="issueBookForm" class="crud-form" novalidate>
+                    
+                    <!-- Select Student -->
+                    <div class="form-group">
+                      <label for="issueStudentSelect">Select student <span class="required">*</span></label>
+                      <select id="issueStudentSelect" class="form-control form-select" required>
+                        <option value="">Choose a student</option>
+                        <!-- Populated by JS -->
+                      </select>
+                    </div>
+
+                    <!-- Select Book -->
+                    <div class="form-group">
+                      <label for="issueBookSelect">Select book <span class="required">*</span></label>
+                      <select id="issueBookSelect" class="form-control form-select" required>
+                        <option value="">Choose an available book</option>
+                        <!-- Populated by JS -->
+                      </select>
+                    </div>
+
+                    <!-- Date Selection Row -->
+                    <div class="form-row">
+                      <div class="form-group col-half">
+                        <label for="issueDateInput">Issue date <span class="required">*</span></label>
+                        <input type="date" id="issueDateInput" class="form-control" required>
+                      </div>
+
+                      <div class="form-group col-half">
+                        <label for="dueDateInput">Due date <span class="required">*</span></label>
+                        <input type="date" id="dueDateInput" class="form-control" required>
+                      </div>
+                    </div>
+
+                    <!-- Borrowing Info Alert Notice -->
+                    <div class="info-notice">
+                      <div class="notice-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                      </div>
+                      <div class="notice-content">
+                        Standard borrowing period is <strong>14 days</strong>. The due date is assigned automatically.
+                      </div>
+                    </div>
+
+                    <div class="form-actions mt-4">
+                      <button type="submit" class="btn btn-primary btn-block" id="btnConfirmIssue">
+                        <span>Confirm issue</span>
+                        <span class="btn-arrow">→</span>
+                      </button>
+                    </div>
+
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Good to Know & Live Stock Highlights -->
+            <div class="circulation-sidebar-wrap">
+              
+              <div class="card info-card">
+                <div class="info-card-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                  </svg>
+                </div>
+                <h3 class="info-card-title">Good to know</h3>
+                <p class="info-card-body">
+                  Only registered students and books with available copies can be selected. The catalog stock updates automatically after a successful checkout.
+                </p>
+                <div class="info-metric-divider"></div>
+                <div class="info-metric">
+                  <div class="metric-number" id="issueCopiesAvailableCount">0</div>
+                  <div class="metric-caption">copies ready to borrow</div>
+                </div>
+              </div>
+
+              <!-- Live Circulation Summary Box -->
+              <div class="card mt-4 p-4">
+                <h4 class="subhead-small">Active Lending Status</h4>
+                <div class="status-summary-stats mt-2">
+                  <div class="status-summary-row">
+                    <span>Currently Issued</span>
+                    <strong id="activeCirculationCount">0</strong>
+                  </div>
+                  <div class="status-summary-row">
+                    <span>Overdue Books</span>
+                    <strong class="text-danger" id="activeOverdueCount">0</strong>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- Active Issued Books Table in Circulation Module (Requirement 6) -->
+          <div class="card mt-5">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Active Issued Records</h3>
+                <p class="card-subtitle">Books currently in circulation. Overdue titles are highlighted.</p>
+              </div>
+              <button class="btn btn-outline btn-sm" id="btnGoToReturnModule">Manage returns →</button>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table" id="activeIssuesTable">
+                  <thead>
+                    <tr>
+                      <th>STUDENT</th>
+                      <th>BOOK</th>
+                      <th>ISSUE DATE</th>
+                      <th>DUE DATE</th>
+                      <th>STATUS</th>
+                      <th class="text-right">QUICK RETURN</th>
+                    </tr>
+                  </thead>
+                  <tbody id="activeIssuesTableBody">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+
+              <div id="activeIssuesEmptyState" class="empty-state d-none">
+                <div class="empty-icon">✨</div>
+                <h4>No active checkouts</h4>
+                <p>All borrowed books have been returned to the library shelves.</p>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- SECTION 5: RETURN BOOKS                                           -->
+        <!-- ================================================================= -->
+        <section id="section-return" class="content-section">
+          
+          <div class="section-hero">
+            <div class="section-eyebrow">CIRCULATION DESK</div>
+            <h1 class="section-title">Return Books</h1>
+            <p class="section-subtitle">Process book returns, restore shelf stock, and archive checkout records.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-header card-header-filter">
+              <div>
+                <h3 class="card-title">Books Awaiting Return</h3>
+                <p class="card-subtitle">Click "Return Book" to log return date and increase available quantity.</p>
+              </div>
+              
+              <!-- Search & Filter Controls -->
+              <div class="filter-toolbar">
+                <div class="search-input-wrap">
+                  <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                  <input type="text" id="searchReturnsInput" class="form-control form-control-sm" placeholder="Search student or book...">
+                </div>
+
+                <select id="filterReturnStatus" class="form-control form-control-sm form-select">
+                  <option value="all">All Active Records</option>
+                  <option value="overdue">Overdue Only</option>
+                  <option value="ontime">On Time Only</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table" id="returnsTable">
+                  <thead>
+                    <tr>
+                      <th>ISSUE ID</th>
+                      <th>STUDENT</th>
+                      <th>BOOK</th>
+                      <th>ISSUE DATE</th>
+                      <th>DUE DATE</th>
+                      <th>LENDING STATUS</th>
+                      <th class="text-right">ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody id="returnsTableBody">
+                    <!-- Populated dynamically by JS -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Empty state when no books are awaiting return -->
+              <div id="returnsEmptyState" class="empty-state d-none">
+                <div class="empty-icon">🎉</div>
+                <h4>Zero books awaiting return</h4>
+                <p>All active books have been returned. Issue a book when students borrow new titles.</p>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- SECTION 6: ISSUE HISTORY (Requirement 8)                          -->
+        <!-- ================================================================= -->
+        <section id="section-history" class="content-section">
+          
+          <div class="section-hero-split">
+            <div class="section-hero-text">
+              <div class="section-eyebrow">CIRCULATION ARCHIVE</div>
+              <h1 class="section-title">Issue History</h1>
+              <p class="section-subtitle">Complete ledger of all past and current book circulation records.</p>
+            </div>
+
+            <div class="section-actions-wrap">
+              <button class="btn btn-outline btn-sm btn-icon-text" id="btnExportHistoryCSV">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Export CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header card-header-filter">
+              <div>
+                <h3 class="card-title">All Transactions</h3>
+                <p class="card-subtitle" id="historyRecordCount">0 total records</p>
+              </div>
+              
+              <!-- Search & Status Filter Controls (Requirement 8) -->
+              <div class="filter-toolbar">
+                <div class="search-input-wrap">
+                  <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                  <input type="text" id="searchHistoryInput" class="form-control form-control-sm" placeholder="Search student, book, ID...">
+                </div>
+
+                <select id="filterHistoryStatus" class="form-control form-control-sm form-select">
+                  <option value="all">All Statuses</option>
+                  <option value="Issued">Issued (Active)</option>
+                  <option value="Returned">Returned</option>
+                  <option value="Overdue">Overdue</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table" id="historyTable">
+                  <thead>
+                    <tr>
+                      <th>TRANSACTION ID</th>
+                      <th>STUDENT NAME</th>
+                      <th>ROLL NUMBER</th>
+                      <th>BOOK TITLE</th>
+                      <th>BOOK ID</th>
+                      <th>ISSUE DATE</th>
+                      <th>DUE DATE</th>
+                      <th>RETURN DATE</th>
+                      <th>STATUS</th>
+                    </tr>
+                  </thead>
+                  <tbody id="historyTableBody">
+                    <!-- Populated dynamically by JS -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Empty state for history -->
+              <div id="historyEmptyState" class="empty-state d-none">
+                <div class="empty-icon">📜</div>
+                <h4>No transactions match your search</h4>
+                <p>Reset filters or issue books to start building your library's circulation ledger.</p>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+      </main>
+
+      <!-- Site Footer -->
+      <footer class="app-footer">
+        <div class="footer-left">
+          <span>PAGETURN Library Management</span>
+        </div>
+        <div class="footer-right">
+          <span>Built for a better reading experience.</span>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- 3. MODALS (Requirement 10: Modal forms for adding/editing records)        -->
+  <!-- ========================================================================= -->
+
+  <!-- EDIT BOOK MODAL -->
+  <div class="modal-overlay d-none" id="editBookModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">Edit Book Details</h3>
+          <button class="btn-close-modal" data-modal="editBookModal" aria-label="Close modal">✕</button>
+        </div>
+        <div class="modal-body">
+          <form id="editBookForm" novalidate>
+            <input type="hidden" id="editBookOriginalId">
+
+            <div class="form-group">
+              <label for="editBookId">Book ID <span class="required">*</span></label>
+              <input type="text" id="editBookId" class="form-control" required>
+              <span class="form-hint">Must remain unique across all books.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="editBookTitle">Book Title <span class="required">*</span></label>
+              <input type="text" id="editBookTitle" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+              <label for="editBookAuthor">Author <span class="required">*</span></label>
+              <input type="text" id="editBookAuthor" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+              <label for="editBookCategory">Category <span class="required">*</span></label>
+              <input type="text" id="editBookCategory" class="form-control" required>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-half">
+                <label for="editBookTotalQty">Total Quantity <span class="required">*</span></label>
+                <input type="number" id="editBookTotalQty" class="form-control" min="1" step="1" required>
+              </div>
+              <div class="form-group col-half">
+                <label for="editBookAvailableQty">Available Quantity <span class="required">*</span></label>
+                <input type="number" id="editBookAvailableQty" class="form-control" min="0" step="1" required>
+                <span class="form-hint">Cannot exceed total.</span>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline" data-modal="editBookModal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT STUDENT MODAL -->
+  <div class="modal-overlay d-none" id="editStudentModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">Edit Student Details</h3>
+          <button class="btn-close-modal" data-modal="editStudentModal" aria-label="Close modal">✕</button>
+        </div>
+        <div class="modal-body">
+          <form id="editStudentForm" novalidate>
+            <input type="hidden" id="editStudentOriginalRoll">
+
+            <div class="form-group">
+              <label for="editStudentRoll">Roll Number <span class="required">*</span></label>
+              <input type="text" id="editStudentRoll" class="form-control" required>
+              <span class="form-hint">Must remain unique across all students.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="editStudentName">Student Name <span class="required">*</span></label>
+              <input type="text" id="editStudentName" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+              <label for="editStudentDept">Department <span class="required">*</span></label>
+              <input type="text" id="editStudentDept" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+              <label for="editStudentEmail">Email Address <span class="required">*</span></label>
+              <input type="email" id="editStudentEmail" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+              <label for="editStudentPhone">Phone Number <span class="required">*</span></label>
+              <input type="tel" id="editStudentPhone" class="form-control" required>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline" data-modal="editStudentModal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIRMATION DIALOG MODAL (Requirement 10: Confirmation dialog before deleting) -->
+  <div class="modal-overlay d-none" id="confirmModal">
+    <div class="modal-dialog modal-dialog-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="confirm-icon-wrap" id="confirmModalIcon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <h3 class="modal-title" id="confirmModalTitle">Confirm Action</h3>
+          <button class="btn-close-modal" data-modal="confirmModal" aria-label="Close modal">✕</button>
+        </div>
+        <div class="modal-body">
+          <p id="confirmModalMessage" class="confirm-message">Are you sure you want to proceed?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="confirmModalCancelBtn">Cancel</button>
+          <button type="button" class="btn btn-danger" id="confirmModalProceedBtn">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- 4. TOAST NOTIFICATIONS CONTAINER (Requirement 10)                         -->
+  <!-- ========================================================================= -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <!-- Application JavaScript -->
+  <script src="js/script.js"></script>
+</body>
+</html>
