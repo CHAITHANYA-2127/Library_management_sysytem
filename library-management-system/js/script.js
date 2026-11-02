@@ -484,6 +484,7 @@
     studentDeptInput: document.getElementById('studentDeptInput'),
     studentEmailInput: document.getElementById('studentEmailInput'),
     studentPhoneInput: document.getElementById('studentPhoneInput'),
+    studentPasswordInput: document.getElementById('studentPasswordInput'),
     searchStudentsInput: document.getElementById('searchStudentsInput'),
     studentsTableBody: document.getElementById('studentsTableBody'),
     studentsEmptyState: document.getElementById('studentsEmptyState'),
@@ -545,6 +546,7 @@
     editStudentDept: document.getElementById('editStudentDept'),
     editStudentEmail: document.getElementById('editStudentEmail'),
     editStudentPhone: document.getElementById('editStudentPhone'),
+    editStudentPassword: document.getElementById('editStudentPassword'),
 
     // Confirmation Modal
     confirmModal: document.getElementById('confirmModal'),
@@ -1242,6 +1244,17 @@
           </td>
           <td><code>${escapeHTML(student.rollNumber)}</code></td>
           <td>${escapeHTML(student.department)}</td>
+          <td>
+            <div class="student-pwd-cell">
+              <span class="pwd-dots" id="pwdDisplay_${escapeHTML(student.rollNumber)}">••••••••</span>
+              <button type="button" class="btn-pwd-peek" data-roll="${escapeHTML(student.rollNumber)}" data-pwd="${escapeHTML(student.password || 'student123')}" title="Toggle password view">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </td>
           <td>${escapeHTML(student.phone)}</td>
           <td class="text-right">
             <div class="table-actions">
@@ -1262,6 +1275,23 @@
         </tr>
       `;
     }).join('');
+
+    DOM.studentsTableBody.querySelectorAll('.btn-pwd-peek').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const roll = e.currentTarget.getAttribute('data-roll');
+        const pwd = e.currentTarget.getAttribute('data-pwd');
+        const displaySpan = document.getElementById(`pwdDisplay_${roll}`);
+        if (displaySpan) {
+          if (displaySpan.classList.contains('revealed')) {
+            displaySpan.textContent = '••••••••';
+            displaySpan.classList.remove('revealed');
+          } else {
+            displaySpan.textContent = pwd;
+            displaySpan.classList.add('revealed');
+          }
+        }
+      });
+    });
 
     DOM.studentsTableBody.querySelectorAll('.action-edit-student').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -1285,9 +1315,15 @@
     const dept = DOM.studentDeptInput.value.trim();
     const email = DOM.studentEmailInput.value.trim();
     const phone = DOM.studentPhoneInput.value.trim();
+    const password = DOM.studentPasswordInput ? DOM.studentPasswordInput.value.trim() : '';
 
-    if (!name || !roll || !dept || !email || !phone) {
-      showToast('Validation Error', 'Please complete all fields.', 'error');
+    if (!name || !roll || !dept || !email || !phone || !password) {
+      showToast('Validation Error', 'Please complete all fields including student password.', 'error');
+      return;
+    }
+
+    if (password.length < 4) {
+      showToast('Password Too Short', 'Student password must be at least 4 characters long.', 'error');
       return;
     }
 
@@ -1310,15 +1346,15 @@
       department: dept,
       email: email,
       phone: phone,
-      password: 'student123',
+      password: password,
       createdAt: new Date().toISOString()
     };
 
     students.push(newStudent);
     db.saveStudents(students);
-    db.addActivity('register', newStudent.name, `Registered in ${dept} (${roll})`, 'Registered');
+    db.addActivity('register', newStudent.name, `Registered in ${dept} (${roll}) with password`, 'Registered');
 
-    showToast('Student Registered', `${newStudent.name} was registered.`);
+    showToast('Student Registered', `${newStudent.name} registered successfully with password!`);
     DOM.registerStudentForm.reset();
 
     renderStudents();
@@ -1336,6 +1372,9 @@
     DOM.editStudentDept.value = student.department;
     DOM.editStudentEmail.value = student.email;
     DOM.editStudentPhone.value = student.phone;
+    if (DOM.editStudentPassword) {
+      DOM.editStudentPassword.value = student.password || 'student123';
+    }
 
     openModal(DOM.editStudentModal);
   }
@@ -1348,9 +1387,15 @@
     const dept = DOM.editStudentDept.value.trim();
     const email = DOM.editStudentEmail.value.trim();
     const phone = DOM.editStudentPhone.value.trim();
+    const password = DOM.editStudentPassword ? DOM.editStudentPassword.value.trim() : '';
 
-    if (!newRoll || !name || !dept || !email || !phone) {
+    if (!newRoll || !name || !dept || !email || !phone || !password) {
       showToast('Validation Error', 'Please complete all fields.', 'error');
+      return;
+    }
+
+    if (password.length < 4) {
+      showToast('Password Too Short', 'Student password must be at least 4 characters long.', 'error');
       return;
     }
 
@@ -1374,6 +1419,7 @@
       department: dept,
       email: email,
       phone: phone,
+      password: password,
       updatedAt: new Date().toISOString()
     };
 
@@ -2133,7 +2179,7 @@
 
       if (student) {
         const studentPwd = student.password || 'student123';
-        if (pass === studentPwd || pass.length >= 4) {
+        if (pass === studentPwd) {
           const authData = { isLoggedIn: true, role: 'student', student: student };
           db.setAuth(authData);
           state.currentRole = 'student';
@@ -2144,7 +2190,7 @@
           renderStudentPortal();
           showToast('Welcome Student', `Signed in as ${student.name} (${student.rollNumber}).`);
         } else {
-          showToast('Login Failed', 'Incorrect password for this student account.', 'error');
+          showToast('Login Failed', 'Incorrect password. Please use the password set by your admin.', 'error');
         }
       } else {
         showToast('Student Not Found', `No student registered with roll number "${roll}".`, 'error');

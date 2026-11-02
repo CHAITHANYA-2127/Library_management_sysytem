@@ -1820,6 +1820,51 @@ a {
   color: var(--color-text-primary);
 }
 
+/* Student Password Safe Cell & Badges */
+.student-pwd-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--color-bg-muted);
+  border: 1px solid var(--color-border);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.pwd-dots {
+  letter-spacing: 2px;
+  color: var(--color-text-muted);
+  user-select: none;
+  font-size: 0.85rem;
+}
+
+.pwd-dots.revealed {
+  letter-spacing: normal;
+  color: var(--color-primary);
+  font-weight: 700;
+  user-select: all;
+}
+
+.btn-pwd-peek {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  border-radius: 4px;
+  transition: color var(--transition-fast), transform var(--transition-fast);
+}
+
+.btn-pwd-peek:hover {
+  color: var(--color-primary);
+  transform: scale(1.15);
+}
+
 /* --------------------------------------------------------------------------
    12. Circulation Grid & Details
    -------------------------------------------------------------------------- */
