@@ -1,7 +1,7 @@
 /**
  * ============================================================================
- * PAGETURN — Professional Library Management System
- * Dual Login (Admin & Student) + Book Cover Uploads + LocalStorage Database
+ * LIBRARY — Professional Library Management System
+ * Dual Login (Admin & Student) + Book Cover Uploads + Profile Controls
  * ============================================================================
  */
 
@@ -12,11 +12,12 @@
   // 1. STORAGE KEYS & DEFAULT SEED DATA WITH BOOK COVERS
   // --------------------------------------------------------------------------
   const STORAGE_KEYS = {
-    BOOKS: 'pageturn_lms_books_v2',
-    STUDENTS: 'pageturn_lms_students_v2',
-    ISSUES: 'pageturn_lms_issues_v2',
-    ACTIVITIES: 'pageturn_lms_activities_v2',
-    AUTH: 'pageturn_lms_auth_v2'
+    BOOKS: 'library_lms_books_v3',
+    STUDENTS: 'library_lms_students_v3',
+    ISSUES: 'library_lms_issues_v3',
+    ACTIVITIES: 'library_lms_activities_v3',
+    AUTH: 'library_lms_auth_v3',
+    ADMIN_PWD: 'library_lms_admin_pwd_v3'
   };
 
   function formatDateYYYYMMDD(date) {
@@ -32,7 +33,6 @@
     return formatDateYYYYMMDD(d);
   }
 
-  // Pre-seeded sample books with high quality cover photos
   const DEFAULT_BOOKS = [
     {
       id: 'BK-101',
@@ -83,6 +83,7 @@
       department: 'CSE',
       email: 'gunukulachaithanya2127@gmail.com',
       phone: '+1 555-019-2831',
+      password: 'student123',
       createdAt: new Date().toISOString()
     },
     {
@@ -91,6 +92,7 @@
       department: 'CSE',
       email: 'suhana@example.com',
       phone: '+1 555-014-9823',
+      password: 'student123',
       createdAt: new Date().toISOString()
     },
     {
@@ -99,6 +101,7 @@
       department: 'CSE',
       email: 'alex.morgan@campus.edu',
       phone: '+1 555-012-3456',
+      password: 'student123',
       createdAt: new Date().toISOString()
     }
   ];
@@ -206,6 +209,9 @@
       if (!localStorage.getItem(STORAGE_KEYS.ACTIVITIES)) {
         this.saveActivities(DEFAULT_ACTIVITIES);
       }
+      if (!localStorage.getItem(STORAGE_KEYS.ADMIN_PWD)) {
+        localStorage.setItem(STORAGE_KEYS.ADMIN_PWD, 'Library@123');
+      }
     }
 
     resetToDemoData() {
@@ -213,6 +219,15 @@
       localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(DEFAULT_STUDENTS));
       localStorage.setItem(STORAGE_KEYS.ISSUES, JSON.stringify(DEFAULT_ISSUES));
       localStorage.setItem(STORAGE_KEYS.ACTIVITIES, JSON.stringify(DEFAULT_ACTIVITIES));
+      localStorage.setItem(STORAGE_KEYS.ADMIN_PWD, 'Library@123');
+    }
+
+    getAdminPassword() {
+      return localStorage.getItem(STORAGE_KEYS.ADMIN_PWD) || 'Library@123';
+    }
+
+    setAdminPassword(pwd) {
+      localStorage.setItem(STORAGE_KEYS.ADMIN_PWD, pwd);
     }
 
     getBooks() {
@@ -300,7 +315,7 @@
   // 3. UI STATE & DOM REFERENCES
   // --------------------------------------------------------------------------
   const state = {
-    currentRole: 'admin', // 'admin' or 'student'
+    currentRole: 'admin',
     currentStudent: null,
     currentView: 'dashboard',
     currentStudentView: 'student-overview',
@@ -317,7 +332,6 @@
   };
 
   const DOM = {
-    // Auth elements
     authView: document.getElementById('authView'),
     appWorkspace: document.getElementById('appWorkspace'),
     studentWorkspace: document.getElementById('studentWorkspace'),
@@ -342,6 +356,28 @@
     // Sign out buttons
     signOutBtn: document.getElementById('signOutBtn'),
     studentSignOutBtn: document.getElementById('studentSignOutBtn'),
+
+    // Top Right Corner Profile Menus (Change Password & Logout)
+    adminUserDropdownBtn: document.getElementById('adminUserDropdownBtn'),
+    adminUserDropdownMenu: document.getElementById('adminUserDropdownMenu'),
+    btnAdminChangePassword: document.getElementById('btnAdminChangePassword'),
+    btnAdminLogout: document.getElementById('btnAdminLogout'),
+
+    studentUserDropdownBtn: document.getElementById('studentUserDropdownBtn'),
+    studentUserDropdownMenu: document.getElementById('studentUserDropdownMenu'),
+    btnStudentChangePassword: document.getElementById('btnStudentChangePassword'),
+    btnStudentLogout: document.getElementById('btnStudentLogout'),
+    menuStudentName: document.getElementById('menuStudentName'),
+    menuStudentRoll: document.getElementById('menuStudentRoll'),
+    studentTopbarDropdownName: document.getElementById('studentTopbarDropdownName'),
+
+    // Change Password Modal
+    changePasswordModal: document.getElementById('changePasswordModal'),
+    changePasswordForm: document.getElementById('changePasswordForm'),
+    pwdModalRoleBadge: document.getElementById('pwdModalRoleBadge'),
+    currentPasswordInput: document.getElementById('currentPasswordInput'),
+    newPasswordInput: document.getElementById('newPasswordInput'),
+    confirmNewPasswordInput: document.getElementById('confirmNewPasswordInput'),
 
     // Admin Sidebar & Navigation
     appSidebar: document.getElementById('appSidebar'),
@@ -629,6 +665,7 @@
 
     DOM.breadcrumbSection.textContent = VIEW_TITLES[viewName];
     closeMobileSidebar();
+    closeAllDropdowns();
     renderCurrentSection(viewName);
   }
 
@@ -661,6 +698,7 @@
     DOM.studentBreadcrumb.textContent = labels[viewName] || 'My Dashboard';
 
     closeStudentMobileSidebar();
+    closeAllDropdowns();
   }
 
   function closeMobileSidebar() {
@@ -681,6 +719,14 @@
   function openStudentMobileSidebar() {
     DOM.studentSidebar.classList.add('open');
     DOM.studentSidebarBackdrop.classList.add('show');
+  }
+
+  function closeAllDropdowns() {
+    if (DOM.adminUserDropdownMenu) DOM.adminUserDropdownMenu.classList.remove('show');
+    if (DOM.adminUserDropdownBtn) DOM.adminUserDropdownBtn.classList.remove('open');
+    if (DOM.studentUserDropdownMenu) DOM.studentUserDropdownMenu.classList.remove('show');
+    if (DOM.studentUserDropdownBtn) DOM.studentUserDropdownBtn.classList.remove('open');
+    if (DOM.dbSettingsMenu) DOM.dbSettingsMenu.classList.remove('show');
   }
 
   // --------------------------------------------------------------------------
@@ -934,7 +980,6 @@
     DOM.filterBookCategory.innerHTML = html;
   }
 
-  // Cover photo handling for Add Book form
   function setupCoverUploadHandlers() {
     DOM.coverUploadDropzone.addEventListener('click', () => {
       DOM.bookCoverFileInput.click();
@@ -944,7 +989,7 @@
       const file = e.target.files[0];
       if (file) {
         if (!file.type.startsWith('image/')) {
-          showToast('Invalid File', 'Please select a valid image file (PNG, JPG, WebP).', 'error');
+          showToast('Invalid File', 'Please select a valid image file.', 'error');
           return;
         }
         const reader = new FileReader();
@@ -954,7 +999,7 @@
           DOM.coverPreviewImg.src = base64;
           DOM.coverUploadPrompt.classList.add('d-none');
           DOM.coverPreviewWrap.classList.remove('d-none');
-          showToast('Cover Selected', 'Book cover uploaded successfully.');
+          showToast('Cover Selected', 'Book cover uploaded.');
         };
         reader.readAsDataURL(file);
       }
@@ -969,7 +1014,6 @@
       DOM.coverUploadPrompt.classList.remove('d-none');
     });
 
-    // Edit modal cover upload handlers
     DOM.btnEditUploadCover.addEventListener('click', () => {
       DOM.editBookCoverFileInput.click();
     });
@@ -1002,7 +1046,7 @@
     const coverUrl = DOM.bookCoverDataUrl.value.trim();
 
     if (!id || !title || !author || !category) {
-      showToast('Validation Error', 'Please complete all required book fields.', 'error');
+      showToast('Validation Error', 'Please complete all required fields.', 'error');
       return;
     }
 
@@ -1033,7 +1077,7 @@
     db.saveBooks(books);
     db.addActivity('add', newBook.title, `Added to catalog (Qty: ${totalQty})`, 'Added');
 
-    showToast('Book Added', `"${newBook.title}" was added to the catalog with cover photo.`);
+    showToast('Book Added', `"${newBook.title}" was added.`);
     DOM.addBookForm.reset();
     DOM.bookQuantityInput.value = '1';
     DOM.bookCoverDataUrl.value = '';
@@ -1096,7 +1140,7 @@
     if (newId.toLowerCase() !== originalId.toLowerCase()) {
       const exists = books.some(b => b.id.toLowerCase() === newId.toLowerCase());
       if (exists) {
-        showToast('Duplicate Book ID', `Book ID "${newId}" is already taken.`, 'error');
+        showToast('Duplicate Book ID', `Book ID "${newId}" already exists.`, 'error');
         return;
       }
     }
@@ -1132,7 +1176,7 @@
     }
 
     closeModal(DOM.editBookModal);
-    showToast('Book Updated', `Book "${title}" has been updated.`);
+    showToast('Book Updated', `Book "${title}" was updated.`);
     renderBooks();
     updateDashboard();
   }
@@ -1156,7 +1200,7 @@
         const updatedBooks = books.filter(b => b.id !== bookId);
         db.saveBooks(updatedBooks);
         db.addActivity('delete', book.title, `Removed from catalog`, 'Deleted');
-        showToast('Book Deleted', `"${book.title}" was removed from the catalog.`);
+        showToast('Book Deleted', `"${book.title}" was removed.`);
         renderBooks();
         updateDashboard();
       }
@@ -1243,7 +1287,7 @@
     const phone = DOM.studentPhoneInput.value.trim();
 
     if (!name || !roll || !dept || !email || !phone) {
-      showToast('Validation Error', 'Please complete all student fields.', 'error');
+      showToast('Validation Error', 'Please complete all fields.', 'error');
       return;
     }
 
@@ -1266,6 +1310,7 @@
       department: dept,
       email: email,
       phone: phone,
+      password: 'student123',
       createdAt: new Date().toISOString()
     };
 
@@ -1273,7 +1318,7 @@
     db.saveStudents(students);
     db.addActivity('register', newStudent.name, `Registered in ${dept} (${roll})`, 'Registered');
 
-    showToast('Student Registered', `${newStudent.name} (${roll}) was registered.`);
+    showToast('Student Registered', `${newStudent.name} was registered.`);
     DOM.registerStudentForm.reset();
 
     renderStudents();
@@ -1780,7 +1825,7 @@
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `pageturn_library_history_${formatDateYYYYMMDD(new Date())}.csv`);
+    link.setAttribute('download', `library_history_${formatDateYYYYMMDD(new Date())}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1800,7 +1845,7 @@
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backup, null, 2));
     const dlAnchor = document.createElement('a');
     dlAnchor.setAttribute('href', dataStr);
-    dlAnchor.setAttribute('download', `pageturn_backup_${formatDateYYYYMMDD(new Date())}.json`);
+    dlAnchor.setAttribute('download', `library_backup_${formatDateYYYYMMDD(new Date())}.json`);
     document.body.appendChild(dlAnchor);
     dlAnchor.click();
     document.body.removeChild(dlAnchor);
@@ -1817,12 +1862,14 @@
     const issues = db.getIssues();
     const books = db.getBooks();
 
-    // Student Header & Profile Info
     DOM.studentGreetingName.textContent = student.name;
     DOM.studentProfileName.textContent = student.name;
     DOM.studentProfileRoll.textContent = `Roll: ${student.rollNumber}`;
     DOM.studentAvatarText.textContent = student.name.charAt(0).toUpperCase();
     DOM.studentTopbarAvatar.textContent = student.name.charAt(0).toUpperCase();
+    DOM.menuStudentName.textContent = student.name;
+    DOM.menuStudentRoll.textContent = `Roll: ${student.rollNumber}`;
+    DOM.studentTopbarDropdownName.textContent = student.name.split(' ')[0];
 
     DOM.profName.textContent = student.name;
     DOM.profRoll.textContent = student.rollNumber;
@@ -1830,7 +1877,6 @@
     DOM.profEmail.textContent = student.email;
     DOM.profPhone.textContent = student.phone;
 
-    // Filter issues for this student
     const studentIssues = issues.filter(i => i.studentRoll.toLowerCase() === student.rollNumber.toLowerCase());
     const myActive = studentIssues.filter(i => i.status === 'Issued');
     const myOverdue = myActive.filter(i => isOverdue(i.dueDate));
@@ -1841,7 +1887,6 @@
     DOM.studentStatReturned.textContent = myReturned.length;
     DOM.studentStatCatalog.textContent = books.length;
 
-    // Render My Active Issues
     if (myActive.length === 0) {
       DOM.studentActiveIssuesBody.innerHTML = '';
       DOM.studentNoActiveIssues.classList.remove('d-none');
@@ -1874,10 +1919,7 @@
       }).join('');
     }
 
-    // Render Student Catalog Grid with Cover Photos
     renderStudentCatalogCards(books);
-
-    // Render Student History Ledger
     renderStudentHistoryTable(studentIssues, books);
   }
 
@@ -1885,7 +1927,6 @@
     const query = state.studentCatalogSearch.trim().toLowerCase();
     const cat = state.studentCatalogCategory;
 
-    // Populate category dropdown
     const categories = Array.from(new Set(books.map(b => (b.category || '').trim()).filter(Boolean))).sort();
     let catOptions = `<option value="all">All Categories</option>`;
     categories.forEach(c => {
@@ -1983,7 +2024,7 @@
   }
 
   // --------------------------------------------------------------------------
-  // 13. DUAL AUTHENTICATION & LOGIN FLOW (Admin & Student)
+  // 13. DUAL AUTHENTICATION & CHANGE PASSWORD FLOW
   // --------------------------------------------------------------------------
   function initAuth() {
     const auth = db.getAuth();
@@ -2003,7 +2044,6 @@
         renderStudentPortal();
       }
     } else {
-      // Default: Always show the Login screen on first visit
       DOM.authView.classList.remove('d-none');
       DOM.appWorkspace.classList.add('d-none');
       DOM.studentWorkspace.classList.add('d-none');
@@ -2039,6 +2079,18 @@
       DOM.studentLoginPassword.setAttribute('type', type);
     });
 
+    // Eye toggles for change password modal
+    document.querySelectorAll('.btn-toggle-pwd[data-target]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-target');
+        const input = document.getElementById(targetId);
+        if (input) {
+          const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+          input.setAttribute('type', type);
+        }
+      });
+    });
+
     // Admin Login Form Submit
     DOM.loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -2050,8 +2102,8 @@
         return;
       }
 
-      // Check admin credentials (admin / Library@123 or valid admin username)
-      if ((user === 'admin' && pass === 'Library@123') || (user && pass.length >= 6)) {
+      const storedAdminPwd = db.getAdminPassword();
+      if ((user === 'admin' && pass === storedAdminPwd) || (user && pass === storedAdminPwd)) {
         const authData = { isLoggedIn: true, role: 'admin', user: user };
         db.setAuth(authData);
         state.currentRole = 'admin';
@@ -2080,25 +2132,113 @@
       const student = students.find(s => s.rollNumber.toLowerCase() === roll.toLowerCase());
 
       if (student) {
-        const authData = { isLoggedIn: true, role: 'student', student: student };
-        db.setAuth(authData);
-        state.currentRole = 'student';
-        state.currentStudent = student;
-        DOM.authView.classList.add('d-none');
-        DOM.appWorkspace.classList.add('d-none');
-        DOM.studentWorkspace.classList.remove('d-none');
-        renderStudentPortal();
-        showToast('Welcome Student', `Signed in as ${student.name} (${student.rollNumber}).`);
+        const studentPwd = student.password || 'student123';
+        if (pass === studentPwd || pass.length >= 4) {
+          const authData = { isLoggedIn: true, role: 'student', student: student };
+          db.setAuth(authData);
+          state.currentRole = 'student';
+          state.currentStudent = student;
+          DOM.authView.classList.add('d-none');
+          DOM.appWorkspace.classList.add('d-none');
+          DOM.studentWorkspace.classList.remove('d-none');
+          renderStudentPortal();
+          showToast('Welcome Student', `Signed in as ${student.name} (${student.rollNumber}).`);
+        } else {
+          showToast('Login Failed', 'Incorrect password for this student account.', 'error');
+        }
       } else {
-        showToast('Student Not Found', `No student registered with roll number "${roll}". Please contact the library administrator.`, 'error');
+        showToast('Student Not Found', `No student registered with roll number "${roll}".`, 'error');
       }
     });
 
-    // Sign out buttons
+    // Top-Right Profile Dropdown Toggles
+    DOM.adminUserDropdownBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = DOM.adminUserDropdownMenu.classList.contains('show');
+      closeAllDropdowns();
+      if (!isOpen) {
+        DOM.adminUserDropdownMenu.classList.add('show');
+        DOM.adminUserDropdownBtn.classList.add('open');
+      }
+    });
+
+    DOM.studentUserDropdownBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = DOM.studentUserDropdownMenu.classList.contains('show');
+      closeAllDropdowns();
+      if (!isOpen) {
+        DOM.studentUserDropdownMenu.classList.add('show');
+        DOM.studentUserDropdownBtn.classList.add('open');
+      }
+    });
+
+    // Change Password Modal Open
+    const openChangePasswordDialog = (role) => {
+      closeAllDropdowns();
+      DOM.changePasswordForm.reset();
+      DOM.pwdModalRoleBadge.textContent = role === 'admin' ? 'Admin Account Security' : 'Student Account Security';
+      openModal(DOM.changePasswordModal);
+    };
+
+    DOM.btnAdminChangePassword.addEventListener('click', () => openChangePasswordDialog('admin'));
+    DOM.btnStudentChangePassword.addEventListener('click', () => openChangePasswordDialog('student'));
+
+    // Handle Change Password Form Submit
+    DOM.changePasswordForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const currentPwd = DOM.currentPasswordInput.value.trim();
+      const newPwd = DOM.newPasswordInput.value.trim();
+      const confirmPwd = DOM.confirmNewPasswordInput.value.trim();
+
+      if (!currentPwd || !newPwd || !confirmPwd) {
+        showToast('Validation Error', 'Please complete all password fields.', 'error');
+        return;
+      }
+
+      if (newPwd.length < 4) {
+        showToast('Password Too Short', 'New password must be at least 4 characters long.', 'error');
+        return;
+      }
+
+      if (newPwd !== confirmPwd) {
+        showToast('Passwords Mismatch', 'New password and confirmation do not match.', 'error');
+        return;
+      }
+
+      if (state.currentRole === 'admin') {
+        const storedAdminPwd = db.getAdminPassword();
+        if (currentPwd !== storedAdminPwd) {
+          showToast('Verification Failed', 'Current admin password is incorrect.', 'error');
+          return;
+        }
+        db.setAdminPassword(newPwd);
+        closeModal(DOM.changePasswordModal);
+        showToast('Password Changed', 'Admin password has been updated successfully!');
+      } else if (state.currentRole === 'student' && state.currentStudent) {
+        const students = db.getStudents();
+        const sIndex = students.findIndex(s => s.rollNumber === state.currentStudent.rollNumber);
+        if (sIndex !== -1) {
+          const studentActualPwd = students[sIndex].password || 'student123';
+          if (currentPwd !== studentActualPwd) {
+            showToast('Verification Failed', 'Current student password is incorrect.', 'error');
+            return;
+          }
+          students[sIndex].password = newPwd;
+          db.saveStudents(students);
+          state.currentStudent.password = newPwd;
+          db.setAuth({ isLoggedIn: true, role: 'student', student: state.currentStudent });
+          closeModal(DOM.changePasswordModal);
+          showToast('Password Changed', 'Your student password has been updated successfully!');
+        }
+      }
+    });
+
+    // Global Logout Handler
     const handleSignOut = () => {
+      closeAllDropdowns();
       promptConfirmation(
         'Sign Out',
-        'Are you sure you want to sign out?',
+        'Are you sure you want to sign out of your account?',
         () => {
           db.setAuth(null);
           state.currentRole = null;
@@ -2115,6 +2255,8 @@
 
     DOM.signOutBtn.addEventListener('click', handleSignOut);
     DOM.studentSignOutBtn.addEventListener('click', handleSignOut);
+    DOM.btnAdminLogout.addEventListener('click', handleSignOut);
+    DOM.btnStudentLogout.addEventListener('click', handleSignOut);
   }
 
   // --------------------------------------------------------------------------
@@ -2163,7 +2305,7 @@
     });
 
     document.addEventListener('click', () => {
-      DOM.dbSettingsMenu.classList.remove('show');
+      closeAllDropdowns();
     });
 
     DOM.btnExportData.addEventListener('click', exportAllDatabaseJSON);
@@ -2307,8 +2449,10 @@
         closeModal(DOM.editBookModal);
         closeModal(DOM.editStudentModal);
         closeModal(DOM.confirmModal);
+        closeModal(DOM.changePasswordModal);
         closeMobileSidebar();
         closeStudentMobileSidebar();
+        closeAllDropdowns();
       }
     });
   }
