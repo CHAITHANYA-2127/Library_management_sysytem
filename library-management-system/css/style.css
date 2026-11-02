@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PAGETURN — Professional Library Management System
+   PAGETURN / LIBRARY — Professional Library Management System
    Clean Modern Dashboard & Design System (HTML5, CSS3, Vanilla JS)
    ========================================================================== */
 
@@ -607,7 +607,7 @@ a {
 }
 
 .student-avatar-circle {
-  background-color: #0d5c75;
+  background-color: #0d5c75 !important;
 }
 
 .admin-info {
@@ -747,7 +747,32 @@ a {
   transform: rotate(180deg);
 }
 
-.user-pill-avatar {
+/* --------------------------------------------------------------------------
+   Top Right Profile Avatar & Dropdown Menu (Change Password, Logout)
+   -------------------------------------------------------------------------- */
+.user-dropdown-wrap {
+  position: relative;
+}
+
+.btn-user-avatar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding: 4px 10px 4px 4px;
+  cursor: pointer;
+  background-color: var(--color-bg-card);
+  transition: all var(--transition-fast);
+}
+
+.btn-user-avatar:hover {
+  background-color: var(--color-bg-muted);
+  border-color: #ccd7c8;
+}
+
+.user-avatar-circle {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -759,6 +784,96 @@ a {
   justify-content: center;
   font-size: 0.85rem;
   border: 1px solid #d0e0d5;
+}
+
+.user-dropdown-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--color-text-primary);
+}
+
+.dropdown-chevron {
+  color: var(--color-text-muted);
+  transition: transform var(--transition-fast);
+}
+
+.btn-user-avatar.open .dropdown-chevron {
+  transform: rotate(180deg);
+}
+
+.user-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
+  min-width: 220px;
+  padding: 8px;
+  display: none;
+  z-index: 200;
+  animation: modalScale 0.18s ease-out;
+}
+
+.user-dropdown-menu.show {
+  display: block;
+}
+
+.user-menu-header {
+  padding: 10px 12px 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-menu-header strong {
+  font-size: 0.92rem;
+  color: var(--color-text-primary);
+}
+
+.user-menu-header span {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.user-menu-divider {
+  height: 1px;
+  background-color: var(--color-border-subtle);
+  margin: 6px 0;
+}
+
+.user-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 0.86rem;
+  font-weight: 500;
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color var(--transition-fast);
+}
+
+.user-menu-item:hover {
+  background-color: var(--color-bg-muted);
+}
+
+.user-menu-item.text-danger:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.user-role-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  display: block;
+  margin-top: 2px;
 }
 
 /* Dropdown Menu */
@@ -1285,7 +1400,6 @@ a {
   background-color: rgba(254, 242, 242, 0.4);
 }
 
-/* Book Cover Thumbnail in Table Rows */
 .table-book-cell {
   display: flex;
   align-items: center;
@@ -1453,7 +1567,6 @@ a {
   padding-left: 32px;
 }
 
-/* Cover Upload Box */
 .cover-upload-box {
   border: 2px dashed var(--color-border);
   border-radius: var(--radius-md);
@@ -1543,7 +1656,6 @@ a {
   gap: 8px;
 }
 
-/* Issue Selection Live Cover Strip */
 .issue-book-preview {
   display: flex;
   align-items: center;
@@ -1854,7 +1966,7 @@ a {
 }
 
 .modal-dialog-sm {
-  max-width: 400px;
+  max-width: 420px;
 }
 
 @keyframes modalScale {
