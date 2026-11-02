@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * PAGETURN — Professional Library Management System
- * Vanilla JavaScript Application Logic & LocalStorage Database
+ * Dual Login (Admin & Student) + Book Cover Uploads + LocalStorage Database
  * ============================================================================
  */
 
@@ -9,19 +9,16 @@
   'use strict';
 
   // --------------------------------------------------------------------------
-  // 1. STORAGE KEYS & INITIAL DEMO DATA
+  // 1. STORAGE KEYS & DEFAULT SEED DATA WITH BOOK COVERS
   // --------------------------------------------------------------------------
   const STORAGE_KEYS = {
-    BOOKS: 'pageturn_lms_books_v1',
-    STUDENTS: 'pageturn_lms_students_v1',
-    ISSUES: 'pageturn_lms_issues_v1',
-    ACTIVITIES: 'pageturn_lms_activities_v1',
-    AUTH: 'pageturn_lms_auth_v1'
+    BOOKS: 'pageturn_lms_books_v2',
+    STUDENTS: 'pageturn_lms_students_v2',
+    ISSUES: 'pageturn_lms_issues_v2',
+    ACTIVITIES: 'pageturn_lms_activities_v2',
+    AUTH: 'pageturn_lms_auth_v2'
   };
 
-  /**
-   * Helper to format a Date into YYYY-MM-DD
-   */
   function formatDateYYYYMMDD(date) {
     const d = new Date(date);
     const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -29,16 +26,13 @@
     return `${d.getFullYear()}-${month}-${day}`;
   }
 
-  /**
-   * Get an offset date string from today
-   */
   function getOffsetDate(daysOffset) {
     const d = new Date();
     d.setDate(d.getDate() + daysOffset);
     return formatDateYYYYMMDD(d);
   }
 
-  // Pre-seed sample datasets matching the provided UI screenshots
+  // Pre-seeded sample books with high quality cover photos
   const DEFAULT_BOOKS = [
     {
       id: 'BK-101',
@@ -47,6 +41,7 @@
       category: 'Moral Values',
       totalQty: 6,
       availableQty: 4,
+      coverUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80',
       createdAt: new Date().toISOString()
     },
     {
@@ -56,6 +51,7 @@
       category: 'Art',
       totalQty: 6,
       availableQty: 6,
+      coverUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=400&q=80',
       createdAt: new Date().toISOString()
     },
     {
@@ -65,6 +61,7 @@
       category: 'Programming',
       totalQty: 5,
       availableQty: 4,
+      coverUrl: 'https://images.unsplash.com/photo-1532012164546-f432f2e3edd4?w=400&q=80',
       createdAt: new Date().toISOString()
     },
     {
@@ -74,6 +71,7 @@
       category: 'Fiction',
       totalQty: 4,
       availableQty: 4,
+      coverUrl: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80',
       createdAt: new Date().toISOString()
     }
   ];
@@ -135,7 +133,7 @@
       bookId: 'BK-103',
       bookTitle: 'Clean Code',
       issueDate: getOffsetDate(-20),
-      dueDate: getOffsetDate(-6), // Overdue!
+      dueDate: getOffsetDate(-6),
       returnDate: null,
       status: 'Issued'
     },
@@ -196,7 +194,6 @@
     }
 
     initDatabase() {
-      // Initialize only if empty, never overwrite existing user data
       if (!localStorage.getItem(STORAGE_KEYS.BOOKS)) {
         this.saveBooks(DEFAULT_BOOKS);
       }
@@ -276,21 +273,24 @@
         status: status,
         timestamp: new Date().toISOString()
       });
-      // Keep only top 30 activities
       if (activities.length > 30) activities.pop();
       this.saveActivities(activities);
     }
 
     getAuth() {
       try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEYS.AUTH)) || { isLoggedIn: true, user: 'admin' };
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.AUTH)) || null;
       } catch (e) {
-        return { isLoggedIn: true, user: 'admin' };
+        return null;
       }
     }
 
     setAuth(authData) {
-      localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(authData));
+      if (authData) {
+        localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(authData));
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.AUTH);
+      }
     }
   }
 
@@ -300,7 +300,10 @@
   // 3. UI STATE & DOM REFERENCES
   // --------------------------------------------------------------------------
   const state = {
+    currentRole: 'admin', // 'admin' or 'student'
+    currentStudent: null,
     currentView: 'dashboard',
+    currentStudentView: 'student-overview',
     bookSearchQuery: '',
     bookCategoryFilter: 'all',
     studentSearchQuery: '',
@@ -308,6 +311,8 @@
     returnStatusFilter: 'all',
     historySearchQuery: '',
     historyStatusFilter: 'all',
+    studentCatalogSearch: '',
+    studentCatalogCategory: 'all',
     pendingConfirmAction: null
   };
 
@@ -315,15 +320,30 @@
     // Auth elements
     authView: document.getElementById('authView'),
     appWorkspace: document.getElementById('appWorkspace'),
+    studentWorkspace: document.getElementById('studentWorkspace'),
+    
+    // Role switcher tabs
+    tabRoleAdmin: document.getElementById('tabRoleAdmin'),
+    tabRoleStudent: document.getElementById('tabRoleStudent'),
+    adminLoginFormWrap: document.getElementById('adminLoginFormWrap'),
+    studentLoginFormWrap: document.getElementById('studentLoginFormWrap'),
+    
+    // Login Forms
     loginForm: document.getElementById('loginForm'),
     loginUsername: document.getElementById('loginUsername'),
     loginPassword: document.getElementById('loginPassword'),
     togglePasswordBtn: document.getElementById('togglePasswordBtn'),
-    autoFillDemoBtn: document.getElementById('autoFillDemoBtn'),
-    demoAccessBox: document.getElementById('demoAccessBox'),
-    signOutBtn: document.getElementById('signOutBtn'),
 
-    // Topbar & Navigation
+    studentLoginForm: document.getElementById('studentLoginForm'),
+    studentLoginRoll: document.getElementById('studentLoginRoll'),
+    studentLoginPassword: document.getElementById('studentLoginPassword'),
+    toggleStudentPasswordBtn: document.getElementById('toggleStudentPasswordBtn'),
+
+    // Sign out buttons
+    signOutBtn: document.getElementById('signOutBtn'),
+    studentSignOutBtn: document.getElementById('studentSignOutBtn'),
+
+    // Admin Sidebar & Navigation
     appSidebar: document.getElementById('appSidebar'),
     sidebarToggleBtn: document.getElementById('sidebarToggleBtn'),
     sidebarCloseBtn: document.getElementById('sidebarCloseBtn'),
@@ -332,8 +352,43 @@
     currentDateDisplay: document.getElementById('currentDateDisplay'),
     refreshDataBtn: document.getElementById('refreshDataBtn'),
     sidebarReturnBadge: document.getElementById('sidebarReturnBadge'),
-    navItems: document.querySelectorAll('.nav-item'),
+    navItems: document.querySelectorAll('.sidebar .nav-item[data-view]'),
     sections: document.querySelectorAll('.content-section'),
+
+    // Student Sidebar & Navigation
+    studentSidebar: document.getElementById('studentSidebar'),
+    studentSidebarToggleBtn: document.getElementById('studentSidebarToggleBtn'),
+    studentSidebarCloseBtn: document.getElementById('studentSidebarCloseBtn'),
+    studentSidebarBackdrop: document.getElementById('studentSidebarBackdrop'),
+    studentBreadcrumb: document.getElementById('studentBreadcrumb'),
+    studentCurrentDateDisplay: document.getElementById('studentCurrentDateDisplay'),
+    studentNavItems: document.querySelectorAll('[data-student-view]'),
+    studentSections: document.querySelectorAll('.student-content-section'),
+    studentGreetingName: document.getElementById('studentGreetingName'),
+    studentProfileName: document.getElementById('studentProfileName'),
+    studentProfileRoll: document.getElementById('studentProfileRoll'),
+    studentAvatarText: document.getElementById('studentAvatarText'),
+    studentTopbarAvatar: document.getElementById('studentTopbarAvatar'),
+
+    // Student Dashboard Elements
+    studentStatIssued: document.getElementById('studentStatIssued'),
+    studentStatOverdue: document.getElementById('studentStatOverdue'),
+    studentStatReturned: document.getElementById('studentStatReturned'),
+    studentStatCatalog: document.getElementById('studentStatCatalog'),
+    studentActiveIssuesBody: document.getElementById('studentActiveIssuesBody'),
+    studentNoActiveIssues: document.getElementById('studentNoActiveIssues'),
+    profName: document.getElementById('profName'),
+    profRoll: document.getElementById('profRoll'),
+    profDept: document.getElementById('profDept'),
+    profEmail: document.getElementById('profEmail'),
+    profPhone: document.getElementById('profPhone'),
+
+    // Student Catalog & History
+    studentBooksCardsGrid: document.getElementById('studentBooksCardsGrid'),
+    studentCatalogSearch: document.getElementById('studentCatalogSearch'),
+    studentCatalogCategoryFilter: document.getElementById('studentCatalogCategoryFilter'),
+    studentHistoryTableBody: document.getElementById('studentHistoryTableBody'),
+    studentHistoryEmpty: document.getElementById('studentHistoryEmpty'),
 
     // Database Actions Dropdown
     dbSettingsBtn: document.getElementById('dbSettingsBtn'),
@@ -341,7 +396,7 @@
     btnExportData: document.getElementById('btnExportData'),
     btnResetDemoData: document.getElementById('btnResetDemoData'),
 
-    // Dashboard elements
+    // Admin Dashboard Elements
     statTotalBooks: document.getElementById('statTotalBooks'),
     statTotalTitles: document.getElementById('statTotalTitles'),
     statAvailableBooks: document.getElementById('statAvailableBooks'),
@@ -364,7 +419,7 @@
     qaIssueBook: document.getElementById('qaIssueBook'),
     qaReturnBook: document.getElementById('qaReturnBook'),
 
-    // Books Module
+    // Books Module & Cover Upload
     booksTotalBadge: document.getElementById('booksTotalBadge'),
     booksAvailableSubtitle: document.getElementById('booksAvailableSubtitle'),
     addBookForm: document.getElementById('addBookForm'),
@@ -373,6 +428,13 @@
     bookAuthorInput: document.getElementById('bookAuthorInput'),
     bookCategoryInput: document.getElementById('bookCategoryInput'),
     bookQuantityInput: document.getElementById('bookQuantityInput'),
+    coverUploadDropzone: document.getElementById('coverUploadDropzone'),
+    bookCoverFileInput: document.getElementById('bookCoverFileInput'),
+    coverUploadPrompt: document.getElementById('coverUploadPrompt'),
+    coverPreviewWrap: document.getElementById('coverPreviewWrap'),
+    coverPreviewImg: document.getElementById('coverPreviewImg'),
+    btnRemoveCover: document.getElementById('btnRemoveCover'),
+    bookCoverDataUrl: document.getElementById('bookCoverDataUrl'),
     searchBooksInput: document.getElementById('searchBooksInput'),
     filterBookCategory: document.getElementById('filterBookCategory'),
     booksTableBody: document.getElementById('booksTableBody'),
@@ -390,10 +452,15 @@
     studentsTableBody: document.getElementById('studentsTableBody'),
     studentsEmptyState: document.getElementById('studentsEmptyState'),
 
-    // Issue Books Module
+    // Issue Books Module & Preview
     issueBookForm: document.getElementById('issueBookForm'),
     issueStudentSelect: document.getElementById('issueStudentSelect'),
     issueBookSelect: document.getElementById('issueBookSelect'),
+    issueBookPreviewBox: document.getElementById('issueBookPreviewBox'),
+    issueBookPreviewImg: document.getElementById('issueBookPreviewImg'),
+    issueBookPreviewTitle: document.getElementById('issueBookPreviewTitle'),
+    issueBookPreviewAuthor: document.getElementById('issueBookPreviewAuthor'),
+    issueBookPreviewStock: document.getElementById('issueBookPreviewStock'),
     issueDateInput: document.getElementById('issueDateInput'),
     dueDateInput: document.getElementById('dueDateInput'),
     issueCopiesAvailableCount: document.getElementById('issueCopiesAvailableCount'),
@@ -417,7 +484,7 @@
     historyEmptyState: document.getElementById('historyEmptyState'),
     btnExportHistoryCSV: document.getElementById('btnExportHistoryCSV'),
 
-    // Modals
+    // Edit Book Modal with Cover
     editBookModal: document.getElementById('editBookModal'),
     editBookForm: document.getElementById('editBookForm'),
     editBookOriginalId: document.getElementById('editBookOriginalId'),
@@ -427,7 +494,13 @@
     editBookCategory: document.getElementById('editBookCategory'),
     editBookTotalQty: document.getElementById('editBookTotalQty'),
     editBookAvailableQty: document.getElementById('editBookAvailableQty'),
+    editBookCoverImg: document.getElementById('editBookCoverImg'),
+    editBookCoverFileInput: document.getElementById('editBookCoverFileInput'),
+    btnEditUploadCover: document.getElementById('btnEditUploadCover'),
+    btnEditRemoveCover: document.getElementById('btnEditRemoveCover'),
+    editBookCoverDataUrl: document.getElementById('editBookCoverDataUrl'),
 
+    // Edit Student Modal
     editStudentModal: document.getElementById('editStudentModal'),
     editStudentForm: document.getElementById('editStudentForm'),
     editStudentOriginalRoll: document.getElementById('editStudentOriginalRoll'),
@@ -437,6 +510,7 @@
     editStudentEmail: document.getElementById('editStudentEmail'),
     editStudentPhone: document.getElementById('editStudentPhone'),
 
+    // Confirmation Modal
     confirmModal: document.getElementById('confirmModal'),
     confirmModalTitle: document.getElementById('confirmModalTitle'),
     confirmModalMessage: document.getElementById('confirmModalMessage'),
@@ -513,14 +587,13 @@
     openModal(DOM.confirmModal);
   }
 
-  /**
-   * Helper to check if a due date is overdue compared to today
-   */
   function isOverdue(dueDateStr) {
     if (!dueDateStr) return false;
     const today = formatDateYYYYMMDD(new Date());
     return dueDateStr < today;
   }
+
+  const DEFAULT_COVER_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 110' fill='%23e2e8de'%3E%3Crect width='80' height='110' rx='4' fill='%23eef2eb'/%3E%3Cpath d='M25 35h30M25 45h30M25 55h20' stroke='%23879b8f' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E";
 
   // --------------------------------------------------------------------------
   // 5. NAVIGATION CONTROLLER
@@ -538,7 +611,6 @@
     if (!VIEW_TITLES[viewName]) viewName = 'dashboard';
     state.currentView = viewName;
 
-    // Update active nav button
     DOM.navItems.forEach(item => {
       if (item.getAttribute('data-view') === viewName) {
         item.classList.add('active');
@@ -547,7 +619,6 @@
       }
     });
 
-    // Update active content section
     DOM.sections.forEach(section => {
       if (section.id === `section-${viewName}`) {
         section.classList.add('active');
@@ -556,14 +627,40 @@
       }
     });
 
-    // Update breadcrumb
     DOM.breadcrumbSection.textContent = VIEW_TITLES[viewName];
-
-    // Close mobile sidebar if open
     closeMobileSidebar();
-
-    // Re-render data for the newly opened section
     renderCurrentSection(viewName);
+  }
+
+  function switchStudentView(viewName) {
+    state.currentStudentView = viewName;
+
+    DOM.studentNavItems.forEach(item => {
+      if (item.getAttribute('data-student-view') === viewName) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+
+    DOM.studentSections.forEach(section => {
+      if (section.id === `section-${viewName}`) {
+        section.classList.remove('d-none');
+        section.classList.add('active');
+      } else {
+        section.classList.add('d-none');
+        section.classList.remove('active');
+      }
+    });
+
+    const labels = {
+      'student-overview': 'My Dashboard',
+      'student-catalog': 'Browse Catalog',
+      'student-history': 'Borrowing History'
+    };
+    DOM.studentBreadcrumb.textContent = labels[viewName] || 'My Dashboard';
+
+    closeStudentMobileSidebar();
   }
 
   function closeMobileSidebar() {
@@ -576,8 +673,18 @@
     DOM.sidebarBackdrop.classList.add('show');
   }
 
+  function closeStudentMobileSidebar() {
+    DOM.studentSidebar.classList.remove('open');
+    DOM.studentSidebarBackdrop.classList.remove('show');
+  }
+
+  function openStudentMobileSidebar() {
+    DOM.studentSidebar.classList.add('open');
+    DOM.studentSidebarBackdrop.classList.add('show');
+  }
+
   // --------------------------------------------------------------------------
-  // 6. DASHBOARD MODULE RENDERING & STATS
+  // 6. DASHBOARD MODULE RENDERING & STATS (Admin)
   // --------------------------------------------------------------------------
   function updateDashboard() {
     const books = db.getBooks();
@@ -585,22 +692,15 @@
     const issues = db.getIssues();
     const activities = db.getActivities();
 
-    // 1. Total copies and unique titles
     const totalTitles = books.length;
     const totalBooksCopies = books.reduce((acc, b) => acc + (parseInt(b.totalQty, 10) || 0), 0);
     const availableCopies = books.reduce((acc, b) => acc + (parseInt(b.availableQty, 10) || 0), 0);
 
-    // Active issues (status === 'Issued')
     const activeIssues = issues.filter(i => i.status === 'Issued');
     const issuedCount = activeIssues.length;
-
-    // Overdue count
     const overdueCount = activeIssues.filter(i => isOverdue(i.dueDate)).length;
-
-    // Registered students count
     const studentCount = students.length;
 
-    // Update Stat Cards (Requirement 2)
     DOM.statTotalBooks.textContent = totalBooksCopies;
     DOM.statTotalTitles.textContent = totalTitles;
     DOM.statAvailableBooks.textContent = availableCopies;
@@ -608,29 +708,21 @@
     DOM.statOverdueWarning.textContent = `${overdueCount} overdue`;
     DOM.statRegisteredStudents.textContent = studentCount;
 
-    // Sidebar badge for active returns awaiting
     DOM.sidebarReturnBadge.textContent = issuedCount;
 
-    // Circulation percentage
     const circulationPercent = totalBooksCopies > 0
       ? Math.round((issuedCount / totalBooksCopies) * 100)
       : 0;
     DOM.statsCirculationPercent.textContent = `${circulationPercent}%`;
     DOM.statsCirculationBar.style.width = `${Math.min(circulationPercent, 100)}%`;
 
-    // In Stock vs Out of Stock Titles
     const inStockTitles = books.filter(b => (parseInt(b.availableQty, 10) || 0) > 0).length;
     const outOfStockTitles = books.filter(b => (parseInt(b.availableQty, 10) || 0) <= 0).length;
     DOM.statsInStockTitles.textContent = `${inStockTitles} titles`;
     DOM.statsOutOfStockTitles.textContent = `${outOfStockTitles} titles`;
 
-    // Category breakdown
     renderDashboardCategories(books);
-
-    // Recent Activity List
     renderDashboardActivities(activities);
-
-    // Recent Book Issues Table
     renderDashboardRecentIssues(activeIssues);
   }
 
@@ -727,7 +819,6 @@
       `;
     }).join('');
 
-    // Attach event listeners for inline return buttons
     DOM.dashboardRecentIssuesTable.querySelectorAll('.btn-quick-return').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const issueId = e.currentTarget.getAttribute('data-id');
@@ -737,23 +828,20 @@
   }
 
   // --------------------------------------------------------------------------
-  // 7. MANAGE BOOKS MODULE
+  // 7. MANAGE BOOKS MODULE & COVER PHOTO UPLOAD
   // --------------------------------------------------------------------------
   function renderBooks() {
     const books = db.getBooks();
     const query = state.bookSearchQuery.trim().toLowerCase();
     const catFilter = state.bookCategoryFilter;
 
-    // Update available copies subtitle and total badge
     const totalCopies = books.reduce((acc, b) => acc + (parseInt(b.totalQty, 10) || 0), 0);
     const availableCopies = books.reduce((acc, b) => acc + (parseInt(b.availableQty, 10) || 0), 0);
     DOM.booksTotalBadge.textContent = `${books.length} titles`;
     DOM.booksAvailableSubtitle.textContent = `${availableCopies} copies available (of ${totalCopies} total)`;
 
-    // Populate Category Filter dropdown dynamically
     updateBookCategoryDropdown(books);
 
-    // Filter books
     const filtered = books.filter(book => {
       const matchSearch =
         (book.title && book.title.toLowerCase().includes(query)) ||
@@ -779,11 +867,18 @@
       if (avail === 0) stockClass = 'out-stock';
       else if (avail <= 1) stockClass = 'low-stock';
 
+      const coverSrc = book.coverUrl || DEFAULT_COVER_PLACEHOLDER;
+
       return `
         <tr>
           <td>
-            <div class="cell-title">${escapeHTML(book.title)}</div>
-            <div class="cell-sub">by ${escapeHTML(book.author)}</div>
+            <div class="table-book-cell">
+              <img src="${escapeHTML(coverSrc)}" alt="Cover" class="table-book-thumb" onerror="this.src='${DEFAULT_COVER_PLACEHOLDER}'">
+              <div class="table-book-meta">
+                <span class="cell-title">${escapeHTML(book.title)}</span>
+                <span class="cell-sub">by ${escapeHTML(book.author)}</span>
+              </div>
+            </div>
           </td>
           <td><code>${escapeHTML(book.id)}</code></td>
           <td>${escapeHTML(book.category)}</td>
@@ -812,7 +907,6 @@
       `;
     }).join('');
 
-    // Attach row action listeners
     DOM.booksTableBody.querySelectorAll('.action-edit-book').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const id = e.currentTarget.getAttribute('data-id');
@@ -840,6 +934,64 @@
     DOM.filterBookCategory.innerHTML = html;
   }
 
+  // Cover photo handling for Add Book form
+  function setupCoverUploadHandlers() {
+    DOM.coverUploadDropzone.addEventListener('click', () => {
+      DOM.bookCoverFileInput.click();
+    });
+
+    DOM.bookCoverFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        if (!file.type.startsWith('image/')) {
+          showToast('Invalid File', 'Please select a valid image file (PNG, JPG, WebP).', 'error');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          const base64 = evt.target.result;
+          DOM.bookCoverDataUrl.value = base64;
+          DOM.coverPreviewImg.src = base64;
+          DOM.coverUploadPrompt.classList.add('d-none');
+          DOM.coverPreviewWrap.classList.remove('d-none');
+          showToast('Cover Selected', 'Book cover uploaded successfully.');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    DOM.btnRemoveCover.addEventListener('click', (e) => {
+      e.stopPropagation();
+      DOM.bookCoverFileInput.value = '';
+      DOM.bookCoverDataUrl.value = '';
+      DOM.coverPreviewImg.src = '';
+      DOM.coverPreviewWrap.classList.add('d-none');
+      DOM.coverUploadPrompt.classList.remove('d-none');
+    });
+
+    // Edit modal cover upload handlers
+    DOM.btnEditUploadCover.addEventListener('click', () => {
+      DOM.editBookCoverFileInput.click();
+    });
+
+    DOM.editBookCoverFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          DOM.editBookCoverDataUrl.value = evt.target.result;
+          DOM.editBookCoverImg.src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    DOM.btnEditRemoveCover.addEventListener('click', () => {
+      DOM.editBookCoverDataUrl.value = '';
+      DOM.editBookCoverImg.src = DEFAULT_COVER_PLACEHOLDER;
+    });
+  }
+
   function handleAddBook(e) {
     e.preventDefault();
     const id = DOM.bookIdInput.value.trim();
@@ -847,24 +999,22 @@
     const author = DOM.bookAuthorInput.value.trim();
     const category = DOM.bookCategoryInput.value.trim();
     const totalQty = parseInt(DOM.bookQuantityInput.value, 10);
+    const coverUrl = DOM.bookCoverDataUrl.value.trim();
 
-    // Validation
     if (!id || !title || !author || !category) {
-      showToast('Validation Error', 'Please complete all required fields.', 'error');
+      showToast('Validation Error', 'Please complete all required book fields.', 'error');
       return;
     }
 
     if (isNaN(totalQty) || totalQty <= 0) {
-      showToast('Validation Error', 'Quantity must be a positive integer greater than zero.', 'error');
+      showToast('Validation Error', 'Quantity must be greater than zero.', 'error');
       return;
     }
 
     const books = db.getBooks();
-
-    // Prevent duplicate Book ID (Requirement 4)
     const exists = books.some(b => b.id.toLowerCase() === id.toLowerCase());
     if (exists) {
-      showToast('Duplicate Book ID', `A book with ID "${id}" already exists. Please choose a unique ID.`, 'error');
+      showToast('Duplicate Book ID', `Book with ID "${id}" already exists.`, 'error');
       return;
     }
 
@@ -875,6 +1025,7 @@
       category: category,
       totalQty: totalQty,
       availableQty: totalQty,
+      coverUrl: coverUrl || null,
       createdAt: new Date().toISOString()
     };
 
@@ -882,9 +1033,13 @@
     db.saveBooks(books);
     db.addActivity('add', newBook.title, `Added to catalog (Qty: ${totalQty})`, 'Added');
 
-    showToast('Book Added', `"${newBook.title}" has been added to the library catalog.`);
+    showToast('Book Added', `"${newBook.title}" was added to the catalog with cover photo.`);
     DOM.addBookForm.reset();
     DOM.bookQuantityInput.value = '1';
+    DOM.bookCoverDataUrl.value = '';
+    DOM.coverPreviewImg.src = '';
+    DOM.coverPreviewWrap.classList.add('d-none');
+    DOM.coverUploadPrompt.classList.remove('d-none');
 
     renderBooks();
     updateDashboard();
@@ -902,6 +1057,10 @@
     DOM.editBookCategory.value = book.category;
     DOM.editBookTotalQty.value = book.totalQty;
     DOM.editBookAvailableQty.value = book.availableQty;
+    
+    const cover = book.coverUrl || DEFAULT_COVER_PLACEHOLDER;
+    DOM.editBookCoverImg.src = cover;
+    DOM.editBookCoverDataUrl.value = book.coverUrl || '';
 
     openModal(DOM.editBookModal);
   }
@@ -915,6 +1074,7 @@
     const category = DOM.editBookCategory.value.trim();
     const totalQty = parseInt(DOM.editBookTotalQty.value, 10);
     const availableQty = parseInt(DOM.editBookAvailableQty.value, 10);
+    const coverUrl = DOM.editBookCoverDataUrl.value.trim();
 
     if (!newId || !title || !author || !category) {
       showToast('Validation Error', 'Please complete all required fields.', 'error');
@@ -926,23 +1086,17 @@
       return;
     }
 
-    if (isNaN(availableQty) || availableQty < 0) {
-      showToast('Validation Error', 'Available quantity cannot be negative.', 'error');
-      return;
-    }
-
-    if (availableQty > totalQty) {
-      showToast('Validation Error', 'Available quantity cannot exceed total quantity.', 'error');
+    if (isNaN(availableQty) || availableQty < 0 || availableQty > totalQty) {
+      showToast('Validation Error', 'Invalid available quantity.', 'error');
       return;
     }
 
     const books = db.getBooks();
 
-    // Check for ID collision if changed
     if (newId.toLowerCase() !== originalId.toLowerCase()) {
       const exists = books.some(b => b.id.toLowerCase() === newId.toLowerCase());
       if (exists) {
-        showToast('Duplicate Book ID', `Book ID "${newId}" is already taken by another book.`, 'error');
+        showToast('Duplicate Book ID', `Book ID "${newId}" is already taken.`, 'error');
         return;
       }
     }
@@ -958,12 +1112,12 @@
       category: category,
       totalQty: totalQty,
       availableQty: availableQty,
+      coverUrl: coverUrl || null,
       updatedAt: new Date().toISOString()
     };
 
     db.saveBooks(books);
 
-    // If ID changed, update linked records in issues & history
     if (newId !== originalId) {
       const issues = db.getIssues();
       let issueUpdated = false;
@@ -978,7 +1132,7 @@
     }
 
     closeModal(DOM.editBookModal);
-    showToast('Book Updated', `Book "${title}" has been successfully updated.`);
+    showToast('Book Updated', `Book "${title}" has been updated.`);
     renderBooks();
     updateDashboard();
   }
@@ -988,17 +1142,16 @@
     const book = books.find(b => b.id === bookId);
     if (!book) return;
 
-    // Check if book has active issued copies
     const issues = db.getIssues();
     const hasActiveIssues = issues.some(i => i.bookId === bookId && i.status === 'Issued');
     if (hasActiveIssues) {
-      showToast('Cannot Delete', `"${book.title}" cannot be deleted because copies are currently issued to students. Return them first.`, 'warning');
+      showToast('Cannot Delete', `"${book.title}" cannot be deleted because copies are currently issued.`, 'warning');
       return;
     }
 
     promptConfirmation(
       'Delete Book',
-      `Are you sure you want to delete "${book.title}" (ID: ${book.id}) from the catalog? This action cannot be undone.`,
+      `Are you sure you want to delete "${book.title}" (ID: ${book.id}) from the catalog?`,
       () => {
         const updatedBooks = books.filter(b => b.id !== bookId);
         db.saveBooks(updatedBooks);
@@ -1066,7 +1219,6 @@
       `;
     }).join('');
 
-    // Attach row action listeners
     DOM.studentsTableBody.querySelectorAll('.action-edit-student').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const roll = e.currentTarget.getAttribute('data-roll');
@@ -1090,9 +1242,8 @@
     const email = DOM.studentEmailInput.value.trim();
     const phone = DOM.studentPhoneInput.value.trim();
 
-    // Validation
     if (!name || !roll || !dept || !email || !phone) {
-      showToast('Validation Error', 'Please complete all student information fields.', 'error');
+      showToast('Validation Error', 'Please complete all student fields.', 'error');
       return;
     }
 
@@ -1103,8 +1254,6 @@
     }
 
     const students = db.getStudents();
-
-    // Prevent duplicate Roll Number (Requirement 5)
     const exists = students.some(s => s.rollNumber.toLowerCase() === roll.toLowerCase());
     if (exists) {
       showToast('Duplicate Roll Number', `Student with Roll Number "${roll}" is already registered.`, 'error');
@@ -1124,7 +1273,7 @@
     db.saveStudents(students);
     db.addActivity('register', newStudent.name, `Registered in ${dept} (${roll})`, 'Registered');
 
-    showToast('Student Registered', `${newStudent.name} (${roll}) was successfully registered.`);
+    showToast('Student Registered', `${newStudent.name} (${roll}) was registered.`);
     DOM.registerStudentForm.reset();
 
     renderStudents();
@@ -1156,7 +1305,7 @@
     const phone = DOM.editStudentPhone.value.trim();
 
     if (!newRoll || !name || !dept || !email || !phone) {
-      showToast('Validation Error', 'Please complete all student information fields.', 'error');
+      showToast('Validation Error', 'Please complete all fields.', 'error');
       return;
     }
 
@@ -1165,7 +1314,7 @@
     if (newRoll.toLowerCase() !== originalRoll.toLowerCase()) {
       const exists = students.some(s => s.rollNumber.toLowerCase() === newRoll.toLowerCase());
       if (exists) {
-        showToast('Duplicate Roll Number', `Roll Number "${newRoll}" is already assigned to another student.`, 'error');
+        showToast('Duplicate Roll Number', `Roll Number "${newRoll}" is already assigned.`, 'error');
         return;
       }
     }
@@ -1185,7 +1334,6 @@
 
     db.saveStudents(students);
 
-    // Update issues if roll or name changed
     if (newRoll !== originalRoll || name !== students[index].name) {
       const issues = db.getIssues();
       let issueUpdated = false;
@@ -1200,7 +1348,7 @@
     }
 
     closeModal(DOM.editStudentModal);
-    showToast('Student Updated', `${name}'s profile was successfully updated.`);
+    showToast('Student Updated', `${name}'s profile was updated.`);
     renderStudents();
     updateDashboard();
   }
@@ -1210,22 +1358,21 @@
     const student = students.find(s => s.rollNumber === rollNumber);
     if (!student) return;
 
-    // Check if student has active issued books
     const issues = db.getIssues();
     const hasActiveIssues = issues.some(i => i.studentRoll === rollNumber && i.status === 'Issued');
     if (hasActiveIssues) {
-      showToast('Cannot Delete', `${student.name} currently has books issued. They must return all borrowed books first.`, 'warning');
+      showToast('Cannot Delete', `${student.name} currently has books issued.`, 'warning');
       return;
     }
 
     promptConfirmation(
       'Delete Student',
-      `Are you sure you want to delete ${student.name} (${student.rollNumber})? This will remove their library membership.`,
+      `Are you sure you want to delete ${student.name} (${student.rollNumber})?`,
       () => {
         const updatedStudents = students.filter(s => s.rollNumber !== rollNumber);
         db.saveStudents(updatedStudents);
         db.addActivity('delete', student.name, `Membership removed (${rollNumber})`, 'Deleted');
-        showToast('Student Deleted', `${student.name} was removed from the member directory.`);
+        showToast('Student Deleted', `${student.name} was removed.`);
         renderStudents();
         updateDashboard();
       }
@@ -1233,20 +1380,18 @@
   }
 
   // --------------------------------------------------------------------------
-  // 9. ISSUE BOOKS MODULE
+  // 9. ISSUE BOOKS MODULE & LIVE PREVIEW
   // --------------------------------------------------------------------------
   function populateIssueDropdowns() {
     const students = db.getStudents();
     const books = db.getBooks();
 
-    // Populate Students Dropdown
     let studentOptions = `<option value="">Choose a student</option>`;
     students.forEach(s => {
       studentOptions += `<option value="${escapeHTML(s.rollNumber)}">${escapeHTML(s.name)} (${escapeHTML(s.rollNumber)} • ${escapeHTML(s.department)})</option>`;
     });
     DOM.issueStudentSelect.innerHTML = studentOptions;
 
-    // Populate Books Dropdown (Show only books with availableQty > 0 per Requirement 6)
     let bookOptions = `<option value="">Choose an available book</option>`;
     books.forEach(b => {
       const avail = parseInt(b.availableQty, 10) || 0;
@@ -1258,11 +1403,9 @@
     });
     DOM.issueBookSelect.innerHTML = bookOptions;
 
-    // Set default dates: Issue = today, Due = today + 14 days
     DOM.issueDateInput.value = formatDateYYYYMMDD(new Date());
     DOM.dueDateInput.value = getOffsetDate(14);
 
-    // Update Right Panel Good to Know Stats
     const totalAvailCopies = books.reduce((acc, b) => acc + (parseInt(b.availableQty, 10) || 0), 0);
     DOM.issueCopiesAvailableCount.textContent = totalAvailCopies;
 
@@ -1274,12 +1417,35 @@
     renderActiveIssuesTable(active);
   }
 
+  function setupBookSelectPreview() {
+    DOM.issueBookSelect.addEventListener('change', (e) => {
+      const bookId = e.target.value;
+      if (!bookId) {
+        DOM.issueBookPreviewBox.classList.add('d-none');
+        return;
+      }
+      const books = db.getBooks();
+      const book = books.find(b => b.id === bookId);
+      if (book) {
+        DOM.issueBookPreviewBox.classList.remove('d-none');
+        DOM.issueBookPreviewImg.src = book.coverUrl || DEFAULT_COVER_PLACEHOLDER;
+        DOM.issueBookPreviewTitle.textContent = book.title;
+        DOM.issueBookPreviewAuthor.textContent = `by ${book.author} (${book.category})`;
+        DOM.issueBookPreviewStock.textContent = `${book.availableQty} copies available`;
+      } else {
+        DOM.issueBookPreviewBox.classList.add('d-none');
+      }
+    });
+  }
+
   function renderActiveIssuesTable(activeIssues) {
     if (!activeIssues || activeIssues.length === 0) {
       DOM.activeIssuesTableBody.innerHTML = '';
       DOM.activeIssuesEmptyState.classList.remove('d-none');
       return;
     }
+
+    const books = db.getBooks();
 
     DOM.activeIssuesEmptyState.classList.add('d-none');
     DOM.activeIssuesTableBody.innerHTML = activeIssues.map(issue => {
@@ -1288,6 +1454,9 @@
         ? `<span class="badge badge-overdue">Overdue</span>`
         : `<span class="badge badge-issued">Active</span>`;
 
+      const book = books.find(b => b.id === issue.bookId);
+      const coverSrc = book && book.coverUrl ? book.coverUrl : DEFAULT_COVER_PLACEHOLDER;
+
       return `
         <tr class="${overdue ? 'row-overdue' : ''}">
           <td>
@@ -1295,8 +1464,13 @@
             <div class="cell-sub">Roll: ${escapeHTML(issue.studentRoll)}</div>
           </td>
           <td>
-            <div class="cell-title">${escapeHTML(issue.bookTitle)}</div>
-            <div class="cell-sub">ID: ${escapeHTML(issue.bookId)}</div>
+            <div class="table-book-cell">
+              <img src="${escapeHTML(coverSrc)}" alt="Cover" class="table-book-thumb" onerror="this.src='${DEFAULT_COVER_PLACEHOLDER}'">
+              <div class="table-book-meta">
+                <span class="cell-title">${escapeHTML(issue.bookTitle)}</span>
+                <span class="cell-sub">ID: ${escapeHTML(issue.bookId)}</span>
+              </div>
+            </div>
           </td>
           <td>${escapeHTML(issue.issueDate)}</td>
           <td>${escapeHTML(issue.dueDate)}</td>
@@ -1325,54 +1499,35 @@
     const issueDate = DOM.issueDateInput.value;
     const dueDate = DOM.dueDateInput.value;
 
-    if (!studentRoll) {
-      showToast('Selection Missing', 'Please select a registered student.', 'error');
-      return;
-    }
-
-    if (!bookId) {
-      showToast('Selection Missing', 'Please select a book to issue.', 'error');
-      return;
-    }
-
-    if (!issueDate || !dueDate) {
-      showToast('Date Missing', 'Please specify both issue and due dates.', 'error');
+    if (!studentRoll || !bookId || !issueDate || !dueDate) {
+      showToast('Incomplete', 'Please fill all checkout fields.', 'error');
       return;
     }
 
     if (dueDate < issueDate) {
-      showToast('Invalid Dates', 'Due date cannot be earlier than the issue date.', 'error');
+      showToast('Invalid Dates', 'Due date cannot precede the issue date.', 'error');
       return;
     }
 
     const books = db.getBooks();
     const bookIndex = books.findIndex(b => b.id === bookId);
-    if (bookIndex === -1) {
-      showToast('Error', 'Selected book was not found.', 'error');
-      return;
-    }
+    if (bookIndex === -1) return;
 
     const book = books[bookIndex];
     const availableQty = parseInt(book.availableQty, 10) || 0;
 
-    // Prevent issuing books when stock is zero (Requirement 6)
     if (availableQty <= 0) {
-      showToast('Out of Stock', `No copies of "${book.title}" are currently available.`, 'error');
+      showToast('Out of Stock', `No copies of "${book.title}" are available.`, 'error');
       return;
     }
 
     const students = db.getStudents();
     const student = students.find(s => s.rollNumber === studentRoll);
-    if (!student) {
-      showToast('Error', 'Selected student was not found.', 'error');
-      return;
-    }
+    if (!student) return;
 
-    // Automatically decrease available quantity
     books[bookIndex].availableQty = availableQty - 1;
     db.saveBooks(books);
 
-    // Create new issue record
     const issues = db.getIssues();
     const newTxnId = 'TXN-' + Math.floor(100 + Math.random() * 900);
     const newIssue = {
@@ -1390,13 +1545,12 @@
     issues.unshift(newIssue);
     db.saveIssues(issues);
 
-    // Log recent activity
     db.addActivity('issue', book.title, `${student.name} • ${student.rollNumber}`, 'Issued');
 
-    showToast('Book Issued', `"${book.title}" has been checked out to ${student.name}.`);
+    showToast('Book Issued', `"${book.title}" was checked out to ${student.name}.`);
     DOM.issueBookForm.reset();
+    DOM.issueBookPreviewBox.classList.add('d-none');
 
-    // Refresh UI
     populateIssueDropdowns();
     updateDashboard();
     renderBooks();
@@ -1409,11 +1563,10 @@
     const issues = db.getIssues();
     const query = state.returnSearchQuery.trim().toLowerCase();
     const statusFilter = state.returnStatusFilter;
+    const books = db.getBooks();
 
-    // Filter to active issues
     let activeIssues = issues.filter(i => i.status === 'Issued');
 
-    // Filter by search query
     activeIssues = activeIssues.filter(iss => {
       const matchSearch =
         (iss.studentName && iss.studentName.toLowerCase().includes(query)) ||
@@ -1443,6 +1596,9 @@
         ? `<span class="badge badge-overdue">Overdue</span>`
         : `<span class="badge badge-issued">On Time</span>`;
 
+      const book = books.find(b => b.id === issue.bookId);
+      const coverSrc = book && book.coverUrl ? book.coverUrl : DEFAULT_COVER_PLACEHOLDER;
+
       return `
         <tr class="${overdue ? 'row-overdue' : ''}">
           <td><code>${escapeHTML(issue.id)}</code></td>
@@ -1451,8 +1607,13 @@
             <div class="cell-sub">Roll: ${escapeHTML(issue.studentRoll)}</div>
           </td>
           <td>
-            <div class="cell-title">${escapeHTML(issue.bookTitle)}</div>
-            <div class="cell-sub">ID: ${escapeHTML(issue.bookId)}</div>
+            <div class="table-book-cell">
+              <img src="${escapeHTML(coverSrc)}" alt="Cover" class="table-book-thumb" onerror="this.src='${DEFAULT_COVER_PLACEHOLDER}'">
+              <div class="table-book-meta">
+                <span class="cell-title">${escapeHTML(issue.bookTitle)}</span>
+                <span class="cell-sub">ID: ${escapeHTML(issue.bookId)}</span>
+              </div>
+            </div>
           </td>
           <td>${escapeHTML(issue.issueDate)}</td>
           <td>${escapeHTML(issue.dueDate)}</td>
@@ -1477,31 +1638,24 @@
   function processBookReturn(issueId) {
     const issues = db.getIssues();
     const issueIndex = issues.findIndex(i => i.id === issueId);
-    if (issueIndex === -1) {
-      showToast('Error', 'Transaction record not found.', 'error');
-      return;
-    }
+    if (issueIndex === -1) return;
 
     const issue = issues[issueIndex];
-
-    // Prevent duplicate returns (Requirement 7)
     if (issue.status === 'Returned') {
-      showToast('Notice', 'This book has already been marked as returned.', 'info');
+      showToast('Notice', 'Already marked returned.', 'info');
       return;
     }
 
     promptConfirmation(
       'Confirm Book Return',
-      `Process return for "${issue.bookTitle}" borrowed by ${issue.studentName} (${issue.studentRoll})? Available stock will be updated automatically.`,
+      `Process return for "${issue.bookTitle}" borrowed by ${issue.studentName}? Shelf stock will increase automatically.`,
       () => {
         const todayStr = formatDateYYYYMMDD(new Date());
 
-        // Update issue status & return date
         issue.status = 'Returned';
         issue.returnDate = todayStr;
         db.saveIssues(issues);
 
-        // Automatically increase available quantity (Requirement 7)
         const books = db.getBooks();
         const bookIndex = books.findIndex(b => b.id === issue.bookId);
         if (bookIndex !== -1) {
@@ -1511,27 +1665,29 @@
           db.saveBooks(books);
         }
 
-        // Add recent activity
         db.addActivity('return', issue.bookTitle, `${issue.studentName} • ${issue.studentRoll}`, 'Returned');
 
-        showToast('Return Processed', `"${issue.bookTitle}" was marked as returned today.`);
+        showToast('Return Processed', `"${issue.bookTitle}" marked as returned today.`);
 
-        // Re-render
         renderReturns();
         renderActiveIssuesTable(issues.filter(i => i.status === 'Issued'));
         updateDashboard();
         renderBooks();
+        if (state.currentRole === 'student') {
+          renderStudentPortal();
+        }
       }
     );
   }
 
   // --------------------------------------------------------------------------
-  // 11. ISSUE HISTORY MODULE (Requirement 8)
+  // 11. ISSUE HISTORY MODULE
   // --------------------------------------------------------------------------
   function renderHistory() {
     const issues = db.getIssues();
     const query = state.historySearchQuery.trim().toLowerCase();
     const statusFilter = state.historyStatusFilter;
+    const books = db.getBooks();
 
     DOM.historyRecordCount.textContent = `${issues.length} total records`;
 
@@ -1547,13 +1703,9 @@
       const overdue = isIssued && isOverdue(issue.dueDate);
 
       let matchStatus = true;
-      if (statusFilter === 'Issued') {
-        matchStatus = isIssued;
-      } else if (statusFilter === 'Returned') {
-        matchStatus = issue.status === 'Returned';
-      } else if (statusFilter === 'Overdue') {
-        matchStatus = overdue;
-      }
+      if (statusFilter === 'Issued') matchStatus = isIssued;
+      else if (statusFilter === 'Returned') matchStatus = issue.status === 'Returned';
+      else if (statusFilter === 'Overdue') matchStatus = overdue;
 
       return matchSearch && matchStatus;
     });
@@ -1577,12 +1729,23 @@
         statusBadge = `<span class="badge badge-issued">Issued</span>`;
       }
 
+      const book = books.find(b => b.id === issue.bookId);
+      const coverSrc = book && book.coverUrl ? book.coverUrl : DEFAULT_COVER_PLACEHOLDER;
+
       return `
         <tr class="${overdue ? 'row-overdue' : ''}">
           <td><code>${escapeHTML(issue.id)}</code></td>
           <td><strong>${escapeHTML(issue.studentName)}</strong></td>
           <td><code>${escapeHTML(issue.studentRoll)}</code></td>
-          <td>${escapeHTML(issue.bookTitle)}</td>
+          <td>
+            <div class="table-book-cell">
+              <img src="${escapeHTML(coverSrc)}" alt="Cover" class="table-book-thumb" onerror="this.src='${DEFAULT_COVER_PLACEHOLDER}'">
+              <div class="table-book-meta">
+                <span class="cell-title">${escapeHTML(issue.bookTitle)}</span>
+                <span class="cell-sub">ID: ${escapeHTML(issue.bookId)}</span>
+              </div>
+            </div>
+          </td>
           <td><code>${escapeHTML(issue.bookId)}</code></td>
           <td>${escapeHTML(issue.issueDate)}</td>
           <td>${escapeHTML(issue.dueDate)}</td>
@@ -1622,7 +1785,7 @@
     link.click();
     document.body.removeChild(link);
 
-    showToast('Export Completed', 'Issue history downloaded as CSV file.');
+    showToast('Export Completed', 'History ledger downloaded.');
   }
 
   function exportAllDatabaseJSON() {
@@ -1646,114 +1809,324 @@
   }
 
   // --------------------------------------------------------------------------
-  // 12. MASTER SECTION ROUTER & REFRESH
+  // 12. STUDENT PORTAL LOGIC & RENDERING
   // --------------------------------------------------------------------------
-  function renderCurrentSection(viewName) {
-    switch (viewName) {
-      case 'dashboard':
-        updateDashboard();
-        break;
-      case 'books':
-        renderBooks();
-        break;
-      case 'students':
-        renderStudents();
-        break;
-      case 'issue':
-        populateIssueDropdowns();
-        break;
-      case 'return':
-        renderReturns();
-        break;
-      case 'history':
-        renderHistory();
-        break;
-      default:
-        updateDashboard();
-        break;
+  function renderStudentPortal() {
+    if (!state.currentStudent) return;
+    const student = state.currentStudent;
+    const issues = db.getIssues();
+    const books = db.getBooks();
+
+    // Student Header & Profile Info
+    DOM.studentGreetingName.textContent = student.name;
+    DOM.studentProfileName.textContent = student.name;
+    DOM.studentProfileRoll.textContent = `Roll: ${student.rollNumber}`;
+    DOM.studentAvatarText.textContent = student.name.charAt(0).toUpperCase();
+    DOM.studentTopbarAvatar.textContent = student.name.charAt(0).toUpperCase();
+
+    DOM.profName.textContent = student.name;
+    DOM.profRoll.textContent = student.rollNumber;
+    DOM.profDept.textContent = student.department;
+    DOM.profEmail.textContent = student.email;
+    DOM.profPhone.textContent = student.phone;
+
+    // Filter issues for this student
+    const studentIssues = issues.filter(i => i.studentRoll.toLowerCase() === student.rollNumber.toLowerCase());
+    const myActive = studentIssues.filter(i => i.status === 'Issued');
+    const myOverdue = myActive.filter(i => isOverdue(i.dueDate));
+    const myReturned = studentIssues.filter(i => i.status === 'Returned');
+
+    DOM.studentStatIssued.textContent = myActive.length;
+    DOM.studentStatOverdue.textContent = myOverdue.length;
+    DOM.studentStatReturned.textContent = myReturned.length;
+    DOM.studentStatCatalog.textContent = books.length;
+
+    // Render My Active Issues
+    if (myActive.length === 0) {
+      DOM.studentActiveIssuesBody.innerHTML = '';
+      DOM.studentNoActiveIssues.classList.remove('d-none');
+    } else {
+      DOM.studentNoActiveIssues.classList.add('d-none');
+      DOM.studentActiveIssuesBody.innerHTML = myActive.map(iss => {
+        const overdue = isOverdue(iss.dueDate);
+        const book = books.find(b => b.id === iss.bookId);
+        const coverSrc = book && book.coverUrl ? book.coverUrl : DEFAULT_COVER_PLACEHOLDER;
+        const statusBadge = overdue
+          ? `<span class="badge badge-overdue">Overdue</span>`
+          : `<span class="badge badge-issued">Active Loan</span>`;
+
+        return `
+          <tr class="${overdue ? 'row-overdue' : ''}">
+            <td>
+              <div class="table-book-cell">
+                <img src="${escapeHTML(coverSrc)}" alt="Cover" class="table-book-thumb" onerror="this.src='${DEFAULT_COVER_PLACEHOLDER}'">
+                <div class="table-book-meta">
+                  <span class="cell-title">${escapeHTML(iss.bookTitle)}</span>
+                  <span class="cell-sub">ID: ${escapeHTML(iss.bookId)}</span>
+                </div>
+              </div>
+            </td>
+            <td>${escapeHTML(iss.issueDate)}</td>
+            <td><strong>${escapeHTML(iss.dueDate)}</strong></td>
+            <td>${statusBadge}</td>
+          </tr>
+        `;
+      }).join('');
     }
+
+    // Render Student Catalog Grid with Cover Photos
+    renderStudentCatalogCards(books);
+
+    // Render Student History Ledger
+    renderStudentHistoryTable(studentIssues, books);
   }
 
-  function refreshAllData() {
-    updateDashboard();
-    renderBooks();
-    renderStudents();
-    populateIssueDropdowns();
-    renderReturns();
-    renderHistory();
-    showToast('Data Refreshed', 'All library records and statistics are up to date.', 'info');
+  function renderStudentCatalogCards(books) {
+    const query = state.studentCatalogSearch.trim().toLowerCase();
+    const cat = state.studentCatalogCategory;
+
+    // Populate category dropdown
+    const categories = Array.from(new Set(books.map(b => (b.category || '').trim()).filter(Boolean))).sort();
+    let catOptions = `<option value="all">All Categories</option>`;
+    categories.forEach(c => {
+      catOptions += `<option value="${escapeHTML(c)}" ${cat === c ? 'selected' : ''}>${escapeHTML(c)}</option>`;
+    });
+    DOM.studentCatalogCategoryFilter.innerHTML = catOptions;
+
+    const filtered = books.filter(b => {
+      const matchSearch =
+        (b.title && b.title.toLowerCase().includes(query)) ||
+        (b.author && b.author.toLowerCase().includes(query)) ||
+        (b.category && b.category.toLowerCase().includes(query));
+      const matchCat = (cat === 'all') || (b.category === cat);
+      return matchSearch && matchCat;
+    });
+
+    if (filtered.length === 0) {
+      DOM.studentBooksCardsGrid.innerHTML = `
+        <div class="empty-state" style="grid-column: 1 / -1;">
+          <div class="empty-icon">📚</div>
+          <h4>No books found</h4>
+          <p>Try searching for another title or category.</p>
+        </div>
+      `;
+      return;
+    }
+
+    DOM.studentBooksCardsGrid.innerHTML = filtered.map(b => {
+      const avail = parseInt(b.availableQty, 10) || 0;
+      const coverSrc = b.coverUrl || DEFAULT_COVER_PLACEHOLDER;
+      const inStock = avail > 0;
+
+      return `
+        <div class="book-card-item">
+          <div class="book-card-cover-wrap">
+            <img src="${escapeHTML(coverSrc)}" alt="${escapeHTML(b.title)}" class="book-card-img" onerror="this.src='${DEFAULT_COVER_PLACEHOLDER}'">
+            <span class="book-card-category-tag">${escapeHTML(b.category)}</span>
+          </div>
+          <div class="book-card-body">
+            <h4 class="book-card-title">${escapeHTML(b.title)}</h4>
+            <span class="book-card-author">by ${escapeHTML(b.author)}</span>
+            <div class="book-card-footer">
+              <span class="badge ${inStock ? 'badge-returned' : 'badge-overdue'}">
+                ${inStock ? `${avail} copies ready` : 'Out of Stock'}
+              </span>
+              <code style="font-size: 0.74rem;">${escapeHTML(b.id)}</code>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderStudentHistoryTable(studentIssues, books) {
+    if (studentIssues.length === 0) {
+      DOM.studentHistoryTableBody.innerHTML = '';
+      DOM.studentHistoryEmpty.classList.remove('d-none');
+      return;
+    }
+
+    DOM.studentHistoryEmpty.classList.add('d-none');
+    DOM.studentHistoryTableBody.innerHTML = studentIssues.map(iss => {
+      const overdue = iss.status === 'Issued' && isOverdue(iss.dueDate);
+      let statusBadge = '';
+      if (iss.status === 'Returned') {
+        statusBadge = `<span class="badge badge-returned">Returned</span>`;
+      } else if (overdue) {
+        statusBadge = `<span class="badge badge-overdue">Overdue</span>`;
+      } else {
+        statusBadge = `<span class="badge badge-issued">Issued</span>`;
+      }
+
+      const book = books.find(b => b.id === iss.bookId);
+      const coverSrc = book && book.coverUrl ? book.coverUrl : DEFAULT_COVER_PLACEHOLDER;
+
+      return `
+        <tr class="${overdue ? 'row-overdue' : ''}">
+          <td><code>${escapeHTML(iss.id)}</code></td>
+          <td>
+            <div class="table-book-cell">
+              <img src="${escapeHTML(coverSrc)}" alt="Cover" class="table-book-thumb" onerror="this.src='${DEFAULT_COVER_PLACEHOLDER}'">
+              <div class="table-book-meta">
+                <span class="cell-title">${escapeHTML(iss.bookTitle)}</span>
+                <span class="cell-sub">ID: ${escapeHTML(iss.bookId)}</span>
+              </div>
+            </div>
+          </td>
+          <td>${escapeHTML(iss.issueDate)}</td>
+          <td>${escapeHTML(iss.dueDate)}</td>
+          <td>${iss.returnDate ? escapeHTML(iss.returnDate) : '<span style="color: var(--color-text-muted);">&mdash;</span>'}</td>
+          <td>${statusBadge}</td>
+        </tr>
+      `;
+    }).join('');
   }
 
   // --------------------------------------------------------------------------
-  // 13. AUTHENTICATION & LOGIN FLOW
+  // 13. DUAL AUTHENTICATION & LOGIN FLOW (Admin & Student)
   // --------------------------------------------------------------------------
   function initAuth() {
     const auth = db.getAuth();
 
     if (auth && auth.isLoggedIn) {
       DOM.authView.classList.add('d-none');
-      DOM.appWorkspace.classList.remove('d-none');
-      switchView('dashboard');
+      if (auth.role === 'admin') {
+        state.currentRole = 'admin';
+        DOM.appWorkspace.classList.remove('d-none');
+        DOM.studentWorkspace.classList.add('d-none');
+        switchView('dashboard');
+      } else if (auth.role === 'student') {
+        state.currentRole = 'student';
+        state.currentStudent = auth.student;
+        DOM.studentWorkspace.classList.remove('d-none');
+        DOM.appWorkspace.classList.add('d-none');
+        renderStudentPortal();
+      }
     } else {
+      // Default: Always show the Login screen on first visit
       DOM.authView.classList.remove('d-none');
       DOM.appWorkspace.classList.add('d-none');
+      DOM.studentWorkspace.classList.add('d-none');
     }
 
-    // Toggle password visibility
+    // Role Tab Switches
+    DOM.tabRoleAdmin.addEventListener('click', () => {
+      DOM.tabRoleAdmin.classList.add('active');
+      DOM.tabRoleStudent.classList.remove('active');
+      DOM.adminLoginFormWrap.classList.remove('d-none');
+      DOM.adminLoginFormWrap.classList.add('active');
+      DOM.studentLoginFormWrap.classList.add('d-none');
+      DOM.studentLoginFormWrap.classList.remove('active');
+    });
+
+    DOM.tabRoleStudent.addEventListener('click', () => {
+      DOM.tabRoleStudent.classList.add('active');
+      DOM.tabRoleAdmin.classList.remove('active');
+      DOM.studentLoginFormWrap.classList.remove('d-none');
+      DOM.studentLoginFormWrap.classList.add('active');
+      DOM.adminLoginFormWrap.classList.add('d-none');
+      DOM.adminLoginFormWrap.classList.remove('active');
+    });
+
+    // Password Eye Toggles
     DOM.togglePasswordBtn.addEventListener('click', () => {
       const type = DOM.loginPassword.getAttribute('type') === 'password' ? 'text' : 'password';
       DOM.loginPassword.setAttribute('type', type);
     });
 
-    // Auto-fill demo credentials
-    DOM.autoFillDemoBtn.addEventListener('click', () => {
-      DOM.loginUsername.value = 'admin';
-      DOM.loginPassword.value = 'Library@123';
-      showToast('Demo Credentials Filled', 'Username: admin | Password: Library@123', 'info');
+    DOM.toggleStudentPasswordBtn.addEventListener('click', () => {
+      const type = DOM.studentLoginPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+      DOM.studentLoginPassword.setAttribute('type', type);
     });
 
-    // Handle Login Form Submit
+    // Admin Login Form Submit
     DOM.loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const user = DOM.loginUsername.value.trim();
       const pass = DOM.loginPassword.value.trim();
 
-      // Demo login validation
-      if ((user === 'admin' && pass === 'Library@123') || (user && pass.length >= 4)) {
-        db.setAuth({ isLoggedIn: true, user: user });
+      if (!user || !pass) {
+        showToast('Login Required', 'Please enter admin username and password.', 'error');
+        return;
+      }
+
+      // Check admin credentials (admin / Library@123 or valid admin username)
+      if ((user === 'admin' && pass === 'Library@123') || (user && pass.length >= 6)) {
+        const authData = { isLoggedIn: true, role: 'admin', user: user };
+        db.setAuth(authData);
+        state.currentRole = 'admin';
         DOM.authView.classList.add('d-none');
         DOM.appWorkspace.classList.remove('d-none');
+        DOM.studentWorkspace.classList.add('d-none');
         switchView('dashboard');
-        showToast('Welcome back', `Signed in successfully as ${user}.`);
+        showToast('Welcome Admin', `Signed in successfully as ${user}.`);
       } else {
-        showToast('Sign In Failed', 'Invalid username or password. Check demo credentials.', 'error');
+        showToast('Sign In Failed', 'Invalid admin credentials.', 'error');
       }
     });
 
-    // Sign out button
-    DOM.signOutBtn.addEventListener('click', () => {
+    // Student Login Form Submit
+    DOM.studentLoginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const roll = DOM.studentLoginRoll.value.trim();
+      const pass = DOM.studentLoginPassword.value.trim();
+
+      if (!roll || !pass) {
+        showToast('Login Required', 'Please enter your roll number and password.', 'error');
+        return;
+      }
+
+      const students = db.getStudents();
+      const student = students.find(s => s.rollNumber.toLowerCase() === roll.toLowerCase());
+
+      if (student) {
+        const authData = { isLoggedIn: true, role: 'student', student: student };
+        db.setAuth(authData);
+        state.currentRole = 'student';
+        state.currentStudent = student;
+        DOM.authView.classList.add('d-none');
+        DOM.appWorkspace.classList.add('d-none');
+        DOM.studentWorkspace.classList.remove('d-none');
+        renderStudentPortal();
+        showToast('Welcome Student', `Signed in as ${student.name} (${student.rollNumber}).`);
+      } else {
+        showToast('Student Not Found', `No student registered with roll number "${roll}". Please contact the library administrator.`, 'error');
+      }
+    });
+
+    // Sign out buttons
+    const handleSignOut = () => {
       promptConfirmation(
         'Sign Out',
-        'Are you sure you want to sign out of the library admin workspace?',
+        'Are you sure you want to sign out?',
         () => {
-          db.setAuth({ isLoggedIn: false, user: null });
+          db.setAuth(null);
+          state.currentRole = null;
+          state.currentStudent = null;
           DOM.appWorkspace.classList.add('d-none');
+          DOM.studentWorkspace.classList.add('d-none');
           DOM.authView.classList.remove('d-none');
-          showToast('Signed Out', 'You have been logged out of the workspace.', 'info');
+          DOM.loginForm.reset();
+          DOM.studentLoginForm.reset();
+          showToast('Signed Out', 'You have been signed out to the login screen.', 'info');
         }
       );
-    });
+    };
+
+    DOM.signOutBtn.addEventListener('click', handleSignOut);
+    DOM.studentSignOutBtn.addEventListener('click', handleSignOut);
   }
 
   // --------------------------------------------------------------------------
   // 14. EVENT LISTENERS INITIALIZATION
   // --------------------------------------------------------------------------
   function setupEventListeners() {
-    // Live date display in topbar
     const dateOptions = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
-    DOM.currentDateDisplay.textContent = new Date().toLocaleDateString('en-GB', dateOptions);
+    const dateStr = new Date().toLocaleDateString('en-GB', dateOptions);
+    DOM.currentDateDisplay.textContent = dateStr;
+    DOM.studentCurrentDateDisplay.textContent = dateStr;
 
-    // Sidebar navigation clicks
+    // Admin Sidebar navigation
     DOM.navItems.forEach(btn => {
       btn.addEventListener('click', () => {
         const view = btn.getAttribute('data-view');
@@ -1761,10 +2134,22 @@
       });
     });
 
-    // Mobile sidebar toggle
+    // Student Sidebar navigation
+    DOM.studentNavItems.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const view = btn.getAttribute('data-student-view');
+        switchStudentView(view);
+      });
+    });
+
+    // Mobile sidebar toggles
     DOM.sidebarToggleBtn.addEventListener('click', openMobileSidebar);
     DOM.sidebarCloseBtn.addEventListener('click', closeMobileSidebar);
     DOM.sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+
+    DOM.studentSidebarToggleBtn.addEventListener('click', openStudentMobileSidebar);
+    DOM.studentSidebarCloseBtn.addEventListener('click', closeStudentMobileSidebar);
+    DOM.studentSidebarBackdrop.addEventListener('click', closeStudentMobileSidebar);
 
     // Refresh data button
     DOM.refreshDataBtn.addEventListener('click', () => {
@@ -1785,17 +2170,17 @@
     DOM.btnResetDemoData.addEventListener('click', () => {
       promptConfirmation(
         'Restore Sample Demo Data',
-        'This will reset your library database to the initial demo records. Any custom changes will be replaced. Proceed?',
+        'This will reset your catalog, members, and transactions to the initial sample state with cover photos. Proceed?',
         () => {
           db.resetToDemoData();
           refreshAllData();
-          showToast('Demo Data Restored', 'The sample catalog, members, and circulation records were reset.');
+          showToast('Demo Data Restored', 'The catalog and sample records were restored.');
         }
       );
     });
 
-    // Stat Cards Clicks (navigate to corresponding section)
-    document.querySelectorAll('.stat-card').forEach(card => {
+    // Stat Cards Clicks
+    document.querySelectorAll('.stat-card[data-action]').forEach(card => {
       card.addEventListener('click', () => {
         const action = card.getAttribute('data-action');
         if (action === 'goToBooks') switchView('books');
@@ -1836,7 +2221,9 @@
       switchView('return');
     });
 
-    // Manage Books Form & Filters
+    // Manage Books Form, Cover Upload, Filters
+    setupCoverUploadHandlers();
+    setupBookSelectPreview();
     DOM.addBookForm.addEventListener('submit', handleAddBook);
     DOM.searchBooksInput.addEventListener('input', (e) => {
       state.bookSearchQuery = e.target.value;
@@ -1845,6 +2232,16 @@
     DOM.filterBookCategory.addEventListener('change', (e) => {
       state.bookCategoryFilter = e.target.value;
       renderBooks();
+    });
+
+    // Student Catalog Filters
+    DOM.studentCatalogSearch.addEventListener('input', (e) => {
+      state.studentCatalogSearch = e.target.value;
+      renderStudentCatalogCards(db.getBooks());
+    });
+    DOM.studentCatalogCategoryFilter.addEventListener('change', (e) => {
+      state.studentCatalogCategory = e.target.value;
+      renderStudentCatalogCards(db.getBooks());
     });
 
     // Manage Students Form & Filters
@@ -1911,8 +2308,48 @@
         closeModal(DOM.editStudentModal);
         closeModal(DOM.confirmModal);
         closeMobileSidebar();
+        closeStudentMobileSidebar();
       }
     });
+  }
+
+  function renderCurrentSection(viewName) {
+    switch (viewName) {
+      case 'dashboard':
+        updateDashboard();
+        break;
+      case 'books':
+        renderBooks();
+        break;
+      case 'students':
+        renderStudents();
+        break;
+      case 'issue':
+        populateIssueDropdowns();
+        break;
+      case 'return':
+        renderReturns();
+        break;
+      case 'history':
+        renderHistory();
+        break;
+      default:
+        updateDashboard();
+        break;
+    }
+  }
+
+  function refreshAllData() {
+    updateDashboard();
+    renderBooks();
+    renderStudents();
+    populateIssueDropdowns();
+    renderReturns();
+    renderHistory();
+    if (state.currentRole === 'student') {
+      renderStudentPortal();
+    }
+    showToast('Data Refreshed', 'Records updated.', 'info');
   }
 
   // --------------------------------------------------------------------------
@@ -1929,7 +2366,6 @@
     renderHistory();
   }
 
-  // Run on DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
